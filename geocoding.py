@@ -3,7 +3,7 @@ import requests
 import time
 
 # Datei laden
-df = pd.read_csv("unternehmen_clean_final.csv")
+df = pd.read_csv("unternehmen_tabelle.csv")
 
 # Falls Spalten fehlen
 if 'latitude' not in df.columns:
