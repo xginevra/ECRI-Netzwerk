@@ -2,61 +2,293 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Unternehmenskarte</title>
-
-  <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
-  <!-- Supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
   <style>
-    body { margin: 0; font-family: Arial, sans-serif; }
-    #map { height: 100vh; width: 100%; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #f0f2f5;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Top Bar ── */
+    #topbar {
+      background: #1a2b4a;
+      color: #fff;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      z-index: 1000;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+    }
+
+    #topbar h1 {
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      white-space: nowrap;
+      margin-right: 4px;
+    }
+
+    #search-input {
+      flex: 1;
+      min-width: 180px;
+      padding: 7px 12px;
+      border-radius: 6px;
+      border: none;
+      font-size: 0.9rem;
+      background: #ffffff18;
+      color: #fff;
+      outline: none;
+      transition: background 0.2s;
+    }
+    #search-input::placeholder { color: #ffffffaa; }
+    #search-input:focus { background: #ffffff28; }
+
+    .filter-select {
+      padding: 7px 10px;
+      border-radius: 6px;
+      border: none;
+      font-size: 0.85rem;
+      background: #ffffff18;
+      color: #fff;
+      outline: none;
+      cursor: pointer;
+      min-width: 140px;
+      transition: background 0.2s;
+    }
+    .filter-select:focus { background: #ffffff28; }
+    .filter-select option { background: #1a2b4a; color: #fff; }
+
+    #reset-btn {
+      padding: 7px 14px;
+      border-radius: 6px;
+      border: 1.5px solid #ffffff55;
+      background: transparent;
+      color: #fff;
+      font-size: 0.85rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s;
+    }
+    #reset-btn:hover { background: #ffffff18; }
+
+    #result-count {
+      font-size: 0.8rem;
+      color: #ffffffaa;
+      white-space: nowrap;
+      margin-left: auto;
+    }
+
+    /* ── Map ── */
+    #map {
+      flex: 1;
+      width: 100%;
+    }
+
+    /* ── Popup ── */
+    .popup-inner {
+      min-width: 210px;
+      max-width: 280px;
+      line-height: 1.5;
+      font-size: 0.88rem;
+    }
+    .popup-inner .popup-name {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #1a2b4a;
+      margin-bottom: 3px;
+    }
+    .popup-inner .popup-branche {
+      display: inline-block;
+      background: #e8f0fe;
+      color: #1a2b4a;
+      border-radius: 4px;
+      padding: 1px 7px;
+      font-size: 0.78rem;
+      margin-bottom: 8px;
+    }
+    .popup-inner .popup-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 3px;
+      color: #444;
+    }
+    .popup-inner .popup-row span:first-child { flex-shrink: 0; }
+    .popup-inner a { color: #1a6bbf; text-decoration: none; }
+    .popup-inner a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
 
+<div id="topbar">
+  <h1>🏢 Unternehmenskarte</h1>
+
+  <input type="text" id="search-input" placeholder="Suche in allen Feldern…" />
+
+  <select id="filter-branche" class="filter-select">
+    <option value="">Alle Branchen</option>
+  </select>
+
+  <select id="filter-standort" class="filter-select">
+    <option value="">Alle Standorte</option>
+  </select>
+
+  <button id="reset-btn">✕ Zurücksetzen</button>
+  <span id="result-count"></span>
+</div>
+
 <div id="map"></div>
 
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  // ✅ DEINE DATEN HIER EINTRAGEN
-  const SUPABASE_URL = "https://DEIN-PROJEKT.supabase.co";
-  const SUPABASE_KEY = "DEIN-ANON-KEY";
+  // ──────────────────────────────────────────
+  //  👉 HIER DEINE SUPABASE-DATEN EINTRAGEN
+  // ──────────────────────────────────────────
+  const SUPABASE_URL = "https://gmvodditiwpjlmjvrvec.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdtdm9kZGl0aXdwamxtanZydmVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1OTMxMzUsImV4cCI6MjA5NzE2OTEzNX0.DeZ-S9xsehxaYSzRnDMqSKAVaNp38xzYJg45fqlG6D8";
+  // ──────────────────────────────────────────
 
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const { createClient } = window.supabase;
+  const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  // ✅ Karte initialisieren
-  const map = L.map('map').setView([48.56, 13.43], 10);
-
+  // Karte initialisieren
+  const map = L.map('map').setView([48.56, 13.43], 9);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap'
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
   }).addTo(map);
 
-  // ✅ Daten laden + Marker setzen
+  // Platzhalter-Koordinaten (keine echten Standorte)
+  const PLACEHOLDER_LAT = 51.4323195;
+  const PLACEHOLDER_LNG = 6.7707424;
+
+  let allData = [];
+  let activeMarkers = [];
+
+  // ── Hilfsfunktion: URL normalisieren ──
+  function normalizeUrl(url) {
+    if (!url) return null;
+    return url.startsWith('http') ? url : 'https://' + url;
+  }
+
+  // ── Popup HTML bauen ──
+  function buildPopup(c) {
+    const website = c.website
+      ? `<a href="${normalizeUrl(c.website)}" target="_blank">${c.website}</a>`
+      : '-';
+    const email = c.email
+      ? `<a href="mailto:${c.email}">${c.email}</a>`
+      : '-';
+
+    return `
+      <div class="popup-inner">
+        <div class="popup-name">${c.name ?? ''}</div>
+        ${c.branche ? `<span class="popup-branche">${c.branche}</span>` : ''}
+        <div class="popup-row"><span>📍</span><span>${c.adresse ?? c.standorte ?? '-'}</span></div>
+        <div class="popup-row"><span>📞</span><span>${c.telefon ?? '-'}</span></div>
+        <div class="popup-row"><span>🌐</span><span>${website}</span></div>
+        <div class="popup-row"><span>✉️</span><span>${email}</span></div>
+      </div>
+    `;
+  }
+
+  // ── Volltextsuche: alle Felder prüfen ──
+  function matchesSearch(c, query) {
+    if (!query) return true;
+    const q = query.toLowerCase();
+    return [c.name, c.branche, c.standorte, c.adresse, c.telefon, c.email, c.website, c.fachbereiche]
+      .some(val => val && String(val).toLowerCase().includes(q));
+  }
+
+  // ── Marker rendern ──
+  function renderMarkers() {
+    const query  = document.getElementById('search-input').value.trim();
+    const branche  = document.getElementById('filter-branche').value;
+    const standort = document.getElementById('filter-standort').value;
+
+    // Alte Marker entfernen
+    activeMarkers.forEach(m => map.removeLayer(m));
+    activeMarkers = [];
+
+    const filtered = allData.filter(c => {
+      if (!matchesSearch(c, query)) return false;
+      if (branche  && c.branche  !== branche)  return false;
+      if (standort && c.standorte !== standort) return false;
+      return true;
+    });
+
+    filtered.forEach(c => {
+      const lat = parseFloat(c.latitude);
+      const lng = parseFloat(c.longitude);
+      if (isNaN(lat) || isNaN(lng)) return;
+      if (lat === PLACEHOLDER_LAT && lng === PLACEHOLDER_LNG) return;
+
+      const marker = L.marker([lat, lng])
+        .addTo(map)
+        .bindPopup(buildPopup(c), { maxWidth: 300 });
+      activeMarkers.push(marker);
+    });
+
+    document.getElementById('result-count').textContent =
+      `${activeMarkers.length} Unternehmen`;
+  }
+
+  // ── Dropdowns befüllen ──
+  function populateDropdowns(data) {
+    const branchen  = [...new Set(data.map(c => c.branche).filter(Boolean))].sort();
+    const standorte = [...new Set(data.map(c => c.standorte).filter(Boolean))].sort();
+
+    const bSelect = document.getElementById('filter-branche');
+    branchen.forEach(b => {
+      const opt = document.createElement('option');
+      opt.value = opt.textContent = b;
+      bSelect.appendChild(opt);
+    });
+
+    const sSelect = document.getElementById('filter-standort');
+    standorte.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = opt.textContent = s;
+      sSelect.appendChild(opt);
+    });
+  }
+
+  // ── Daten laden ──
   async function loadCompanies() {
-    const { data, error } = await supabase
-      .from('unternehmen')
-      .select('*');
+    const { data, error } = await db.from('Unternehmen').select('*');
 
     if (error) {
-      console.error(error);
-      alert("Fehler beim Laden der Daten");
+      console.error("Supabase Fehler:", error.message);
+      alert("Fehler beim Laden: " + error.message);
       return;
     }
 
-    data.forEach(company => {
-      if (company.latitude && company.longitude) {
+    allData = data;
+    populateDropdowns(data);
+    renderMarkers();
+  }
 
-        L.marker([company.latitude, company.longitude])
-          .addTo(map)
-          .bindPopup(`
-            <b>${company.name}</b><br><br>
-            <b>Branche:</b> ${company.branche || '-'}<br>
-            <b>Standorte:</b> ${company.standorte || '-'}<br>
-            <b>Fachbereiche:</b> ${company.fachbereiche || '-'}<br><br>
-            <a href="https://${company.website}" target="_blankipt>
+  // ── Event Listener ──
+  document.getElementById('search-input') .addEventListener('input',  renderMarkers);
+  document.getElementById('filter-branche') .addEventListener('change', renderMarkers);
+  document.getElementById('filter-standort').addEventListener('change', renderMarkers);
 
+  document.getElementById('reset-btn').addEventListener('click', () => {
+    document.getElementById('search-input').value = '';
+    document.getElementById('filter-branche').value  = '';
+    document.getElementById('filter-standort').value = '';
+    renderMarkers();
+  });
+
+  loadCompanies();
+</script>
 </body>
 </html>
