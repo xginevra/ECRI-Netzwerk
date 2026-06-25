@@ -48,9 +48,27 @@ FIX_ADDRESS_SEPARATOR = True
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 REQUEST_DELAY_SECONDS = 1.0   # Nominatim erlaubt max. 1 Anfrage/Sekunde
-USER_AGENT = "unternehmenskarte-geocoder/1.0 (kontakt@example.com)"
+USER_AGENT = "ECRI netzwerk - fwojtk@web.de"
 
 FORCE_RECODE = "--force" in sys.argv
+
+# Zeitpunkt der letzten Anfrage an Nominatim (für globales Rate-Limiting)
+_last_request_time = 0.0
+
+
+def _wait_for_rate_limit():
+    """
+    Stellt sicher, dass zwischen JEDER einzelnen Anfrage an Nominatim
+    mindestens REQUEST_DELAY_SECONDS liegen — auch zwischen einem
+    Fallback-Versuch und dem vorherigen Versuch für dieselbe Adresse.
+    Ohne das gibt es schnell 403 Forbidden, da Nominatim strikt limitiert.
+    """
+    global _last_request_time
+    elapsed = time.time() - _last_request_time
+    remaining = REQUEST_DELAY_SECONDS - elapsed
+    if remaining > 0:
+        time.sleep(remaining)
+    _last_request_time = time.time()
 
 
 def clean_address(address: str) -> str:
@@ -127,6 +145,7 @@ def geocode_address(address: str, retries: int = 2):
 
 def _do_geocode_request(params: dict, headers: dict, retries: int):
     for attempt in range(retries + 1):
+        _wait_for_rate_limit()
         try:
             response = requests.get(NOMINATIM_URL, params=params, headers=headers, timeout=10)
             if response.status_code == 403:
@@ -214,8 +233,6 @@ def main():
             row[LON_COLUMN] = lon
             print(f"   ✓ {lat:.5f}, {lon:.5f}")
             success_count += 1
-
-        time.sleep(REQUEST_DELAY_SECONDS)
 
     print(f"\nSchreibe Ergebnis nach '{output_path}'...")
     with open(output_path, "w", newline="", encoding="utf-8") as f:
