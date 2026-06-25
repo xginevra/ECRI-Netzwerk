@@ -65,15 +65,67 @@ def clean_address(address: str) -> str:
     return cleaned
 
 
+def parse_address(address: str):
+    """
+    Zerlegt 'Straße Nr; PLZ Ort' (oder mit Komma) in Straße, PLZ und Ort.
+    Nominatim findet Adressen deutlich zuverlässiger, wenn man sie
+    strukturiert übergibt statt als einen Freitext-String.
+    Gibt ein dict mit street/postalcode/city zurück, oder None falls
+    das Muster nicht erkannt wird.
+
+    Behandelt auch Sonderfälle wie fehlendes Leerzeichen zwischen PLZ und
+    Ort ("94086Bad Griesbach") oder vertauschte Reihenfolge
+    ("15000 Prague; Karla Englise 4").
+    """
+    import re
+    cleaned = clean_address(address)
+
+    # Normalfall: "<Straße inkl. Hausnr.>, <PLZ><Leerzeichen?><Ort>"
+    match = re.match(r"^(.+?),\s*(\d{4,5})\s*(.+)$", cleaned)
+    if match:
+        street, postcode, city = match.groups()
+        return {
+            "street": street.strip(),
+            "postalcode": postcode.strip(),
+            "city": city.strip(),
+        }
+
+    # Vertauschte Reihenfolge: "<PLZ> <Ort>, <Straße inkl. Hausnr.>"
+    match = re.match(r"^(\d{4,5})\s*(.+?),\s*(.+)$", cleaned)
+    if match:
+        postcode, city, street = match.groups()
+        return {
+            "street": street.strip(),
+            "postalcode": postcode.strip(),
+            "city": city.strip(),
+        }
+
+    return None
+
+
 def geocode_address(address: str, retries: int = 2):
     """Fragt Nominatim nach Koordinaten für eine Adresse. Gibt (lat, lon) oder None zurück."""
     if not address or not address.strip():
         return None
 
-    address = clean_address(address)
-    params = {"q": address, "format": "json", "limit": 1}
     headers = {"User-Agent": USER_AGENT}
 
+    # 1. Versuch: strukturierte Suche (street/postalcode/city getrennt)
+    #    -> deutlich zuverlässiger bei deutschen Adressen
+    structured = parse_address(address)
+    if structured:
+        params = {"format": "json", "limit": 1, **structured}
+        result = _do_geocode_request(params, headers, retries)
+        if result:
+            return result
+
+    # 2. Fallback: einfache Freitextsuche mit bereinigter Adresse
+    cleaned = clean_address(address)
+    params = {"q": cleaned, "format": "json", "limit": 1}
+    return _do_geocode_request(params, headers, retries)
+
+
+def _do_geocode_request(params: dict, headers: dict, retries: int):
     for attempt in range(retries + 1):
         try:
             response = requests.get(NOMINATIM_URL, params=params, headers=headers, timeout=10)
