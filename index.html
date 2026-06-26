@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Unternehmenskarte</title>
+  <title>ECRI-Netzwerk</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -34,38 +34,55 @@
       font-weight: 700;
       letter-spacing: 0.03em;
       white-space: nowrap;
-      margin-right: 4px;
+      margin-right: auto;
     }
 
+    .search-wrap {
+      display: flex;
+      align-items: center;
+      position: relative;
+    }
+
+    #search-toggle-btn {
+      width: 34px;
+      height: 34px;
+      flex-shrink: 0;
+      border: none;
+      border-radius: 6px;
+      background: #ffffff18;
+      color: #fff;
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+    #search-toggle-btn:hover { background: #ffffff28; }
+    #search-toggle-btn.active { background: #3a6fd8; }
+
     #search-input {
-      flex: 1;
-      min-width: 180px;
-      padding: 7px 12px;
+      width: 0;
+      min-width: 0;
+      padding: 7px 0;
+      margin-left: 0;
       border-radius: 6px;
       border: none;
       font-size: 0.9rem;
       background: #ffffff18;
       color: #fff;
       outline: none;
-      transition: background 0.2s;
+      opacity: 0;
+      transition: width 0.22s ease, padding 0.22s ease, margin-left 0.22s ease, opacity 0.18s ease;
+    }
+    #search-input.open {
+      width: 220px;
+      padding: 7px 12px;
+      margin-left: 8px;
+      opacity: 1;
     }
     #search-input::placeholder { color: #ffffffaa; }
     #search-input:focus { background: #ffffff28; }
-
-    .filter-select {
-      padding: 7px 10px;
-      border-radius: 6px;
-      border: none;
-      font-size: 0.85rem;
-      background: #ffffff18;
-      color: #fff;
-      outline: none;
-      cursor: pointer;
-      min-width: 140px;
-      transition: background 0.2s;
-    }
-    .filter-select:focus { background: #ffffff28; }
-    .filter-select option { background: #1a2b4a; color: #fff; }
 
     #reset-btn {
       padding: 7px 14px;
@@ -84,15 +101,14 @@
       font-size: 0.8rem;
       color: #ffffffaa;
       white-space: nowrap;
-      margin-left: auto;
     }
 
-    /* ── Badge-Filter Dropdown ── */
+    /* ── Badge-Filter Dropdown (Möglichkeiten & Fachbereiche) ── */
     .badge-filter-wrap {
       position: relative;
     }
 
-    #badge-filter-btn {
+    .multi-filter-btn {
       padding: 7px 12px;
       border-radius: 6px;
       border: none;
@@ -103,12 +119,12 @@
       white-space: nowrap;
       transition: background 0.2s;
     }
-    #badge-filter-btn:hover { background: #ffffff28; }
-    #badge-filter-btn.has-selection {
+    .multi-filter-btn:hover { background: #ffffff28; }
+    .multi-filter-btn.has-selection {
       background: #3a6fd8;
     }
 
-    #badge-filter-dropdown {
+    .multi-filter-dropdown {
       display: none;
       position: absolute;
       top: calc(100% + 6px);
@@ -121,7 +137,12 @@
       width: 260px;
       z-index: 1500;
     }
-    #badge-filter-dropdown.open { display: block; }
+    .multi-filter-dropdown.open { display: block; }
+
+    .multi-filter-options-scroll {
+      max-height: 240px;
+      overflow-y: auto;
+    }
 
     .badge-filter-toggle {
       display: flex;
@@ -164,6 +185,25 @@
     }
     .badge-filter-option:hover { background: #f5f6f8; }
     .badge-filter-option input { cursor: pointer; }
+
+    .multi-filter-search {
+      width: 100%;
+      padding: 6px 10px;
+      margin-bottom: 8px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      outline: none;
+    }
+    .multi-filter-search:focus { border-color: #1a2b4a; }
+
+    .badge-filter-option.is-hidden { display: none; }
+
+    .multi-filter-empty {
+      font-size: 0.8rem;
+      color: #999;
+      padding: 6px 2px;
+    }
 
     /* ── Map ── */
     #map {
@@ -328,6 +368,18 @@
       color: #fff;
     }
 
+    .panel-multi-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .panel-multi-badge {
+      font-size: 0.78rem;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-weight: 600;
+    }
+
     #detail-overlay {
       position: fixed;
       inset: 0;
@@ -346,21 +398,32 @@
 <body>
 
 <div id="topbar">
-  <h1>🏢 Unternehmenskarte</h1>
+  <h1>🏢 ECRI-Netzwerk</h1>
 
-  <input type="text" id="search-input" placeholder="Suche in allen Feldern…" />
-
-  <select id="filter-branche" class="filter-select">
-    <option value="">Alle Branchen</option>
-  </select>
-
-  <select id="filter-standort" class="filter-select">
-    <option value="">Alle Standorte</option>
-  </select>
+  <div class="search-wrap">
+    <button id="search-toggle-btn" title="Suche">🔍</button>
+    <input type="text" id="search-input" placeholder="Suche in allen Feldern…" />
+  </div>
 
   <div class="badge-filter-wrap">
-    <button id="badge-filter-btn">Möglichkeiten ▾</button>
-    <div id="badge-filter-dropdown">
+    <button id="branche-filter-btn" class="multi-filter-btn">Branchen ▾</button>
+    <div id="branche-filter-dropdown" class="multi-filter-dropdown">
+      <input type="text" id="branche-search-input" class="multi-filter-search" placeholder="Branche suchen…">
+      <div id="branche-filter-options" class="multi-filter-options-scroll"></div>
+    </div>
+  </div>
+
+  <div class="badge-filter-wrap">
+    <button id="standort-filter-btn" class="multi-filter-btn">Standorte ▾</button>
+    <div id="standort-filter-dropdown" class="multi-filter-dropdown">
+      <input type="text" id="standort-search-input" class="multi-filter-search" placeholder="Ort suchen…">
+      <div id="standort-filter-options" class="multi-filter-options-scroll"></div>
+    </div>
+  </div>
+
+  <div class="badge-filter-wrap">
+    <button id="badge-filter-btn" class="multi-filter-btn">Möglichkeiten ▾</button>
+    <div id="badge-filter-dropdown" class="multi-filter-dropdown">
       <div class="badge-filter-toggle">
         <span>Kombination</span>
         <div class="badge-filter-toggle-btn">
@@ -369,6 +432,20 @@
         </div>
       </div>
       <div id="badge-filter-options"></div>
+    </div>
+  </div>
+
+  <div class="badge-filter-wrap">
+    <button id="fachbereich-filter-btn" class="multi-filter-btn">Fachbereiche ▾</button>
+    <div id="fachbereich-filter-dropdown" class="multi-filter-dropdown">
+      <div class="badge-filter-toggle">
+        <span>Kombination</span>
+        <div class="badge-filter-toggle-btn">
+          <button id="fachbereich-mode-or" class="active" data-mode="or">ODER</button>
+          <button id="fachbereich-mode-and" data-mode="and">UND</button>
+        </div>
+      </div>
+      <div id="fachbereich-filter-options" class="multi-filter-options-scroll"></div>
     </div>
   </div>
 
@@ -393,6 +470,14 @@
   const SUPABASE_URL = "https://gmvodditiwpjlmjvrvec.supabase.co";
   const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdtdm9kZGl0aXdwamxtanZydmVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1OTMxMzUsImV4cCI6MjA5NzE2OTEzNX0.DeZ-S9xsehxaYSzRnDMqSKAVaNp38xzYJg45fqlG6D8";
   // ──────────────────────────────────────────
+
+  if (typeof window.supabase === 'undefined') {
+    console.error("Supabase-Bibliothek wurde nicht geladen! Mögliche Ursachen: Adblocker/Tracking-Schutz blockiert das CDN-Script, oder kein Internetzugriff.");
+    document.getElementById('map').innerHTML =
+      '<div style="padding:40px;text-align:center;color:#a33;font-family:sans-serif;">' +
+      '⚠ Supabase konnte nicht geladen werden.<br>Bitte Adblocker deaktivieren und Seite neu laden.</div>';
+    throw new Error('Supabase nicht verfügbar – Skript wird gestoppt.');
+  }
 
   const { createClient } = window.supabase;
   const db = createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -448,6 +533,56 @@
     return !!(value && String(value).trim().toUpperCase() === 'X');
   }
 
+  // ── Hilfsfunktion: ";"-getrennte Werte in eine saubere Liste splitten ──
+  function splitMultiValue(value) {
+    if (!value) return [];
+    return String(value)
+      .split(';')
+      .map(v => v.trim())
+      .filter(Boolean);
+  }
+
+  // ── Hilfsfunktion: "/"-getrennte Branchen in eine saubere Liste splitten ──
+  function splitBranche(value) {
+    if (!value) return [];
+    return String(value)
+      .split('/')
+      .map(v => v.trim())
+      .filter(Boolean);
+  }
+
+  // ── Farbpalette für Mehrfachwert-Badges (Standorte, Fachbereiche) ──
+  const MULTI_BADGE_COLORS = [
+    { bg: '#e8f0fe', fg: '#1a4d8f' }, // blau
+    { bg: '#e6f7ec', fg: '#1f7a45' }, // grün
+    { bg: '#fdeee6', fg: '#b5530f' }, // orange
+    { bg: '#f3e8fd', fg: '#6a2fa3' }, // lila
+    { bg: '#fde8ef', fg: '#a31256' }, // pink
+    { bg: '#fff6db', fg: '#8a6d00' }, // gelb/braun
+    { bg: '#e1f5f7', fg: '#0a6e78' }, // türkis
+  ];
+
+  // Stabile Farbzuordnung: gleicher Wert bekommt immer die gleiche Farbe,
+  // basierend auf einem einfachen Hash über den String.
+  function colorForValue(value) {
+    let hash = 0;
+    for (let i = 0; i < value.length; i++) {
+      hash = (hash * 31 + value.charCodeAt(i)) >>> 0;
+    }
+    return MULTI_BADGE_COLORS[hash % MULTI_BADGE_COLORS.length];
+  }
+
+  // Baut farbige Badges für eine getrennte Werteliste (z.B. Standorte, Branchen)
+  // splitter: Funktion zum Aufsplitten des Rohwerts (Standard: ";"-Trennung)
+  function buildMultiValueBadges(value, cssClass, splitter = splitMultiValue) {
+    const values = splitter(value);
+    if (values.length === 0) return '';
+    return values.map(v => {
+      const color = colorForValue(v);
+      return `<span class="${cssClass}" style="background:${color.bg};color:${color.fg}">${v}</span>`;
+    }).join('');
+  }
+
   // ── Badge-Definitionen (Spalte → Anzeigename) ──
   const BADGE_FIELDS = [
     { key: 'Messe DEG',              label: 'Messe DEG' },
@@ -474,7 +609,7 @@
     return `
       <div class="popup-inner">
         <div class="popup-name">${c['Unternehmen'] ?? ''}</div>
-        ${c['Branche'] ? `<span class="popup-branche">${c['Branche']}</span>` : ''}
+        ${c['Branche'] ? `<div class="popup-badges" style="margin-bottom:6px">${buildMultiValueBadges(c['Branche'], 'popup-badge', splitBranche)}</div>` : ''}
         ${(c['Adresse'] || c['Standorte']) ? `<div class="popup-row"><span>📍</span><span>${c['Adresse'] ?? c['Standorte']}</span></div>` : ''}
         ${c['Telefon'] ? `<div class="popup-row"><span>📞</span><span>${c['Telefon']}</span></div>` : ''}
         <div class="popup-badges">${buildBadges(c, 'popup-badge')}</div>
@@ -494,7 +629,7 @@
 
     return `
       <div class="panel-name">${c['Unternehmen'] ?? ''}</div>
-      ${c['Branche'] ? `<span class="panel-branche">${c['Branche']}</span>` : ''}
+      ${c['Branche'] ? `<div class="panel-multi-badges" style="margin-bottom:16px">${buildMultiValueBadges(c['Branche'], 'panel-multi-badge', splitBranche)}</div>` : ''}
 
       <div class="panel-section">
         <h3>Kontakt</h3>
@@ -509,14 +644,14 @@
       ${c['Standorte'] ? `
       <div class="panel-section">
         <h3>Standorte</h3>
-        <div class="panel-row"><span>🏢</span><span>${c['Standorte']}</span></div>
+        <div class="panel-multi-badges">${buildMultiValueBadges(c['Standorte'], 'panel-multi-badge')}</div>
       </div>` : ''}
 
       ${(c['Gesuchte Fachbereiche und Studiengänge'] || c['MA']) ? `
       <div class="panel-section">
         <h3>Gesuchte Fachbereiche</h3>
-        ${c['Gesuchte Fachbereiche und Studiengänge'] ? `<div class="panel-row"><span>🎓</span><span>${c['Gesuchte Fachbereiche und Studiengänge']}</span></div>` : ''}
-        ${c['MA'] ? `<div class="panel-row"><span>👥</span><span>${c['MA']} Mitarbeitende</span></div>` : ''}
+        ${c['Gesuchte Fachbereiche und Studiengänge'] ? `<div class="panel-multi-badges">${buildMultiValueBadges(c['Gesuchte Fachbereiche und Studiengänge'], 'panel-multi-badge')}</div>` : ''}
+        ${c['MA'] ? `<div class="panel-row" style="margin-top:8px"><span>👥</span><span>${c['MA']} Mitarbeitende</span></div>` : ''}
       </div>` : ''}
 
       <div class="panel-section">
@@ -555,24 +690,193 @@
     return Object.values(c).some(val => val && String(val).toLowerCase().includes(q));
   }
 
-  // ── Badge-Filter Status ──
-  let badgeFilterMode = 'or';        // 'or' oder 'and'
-  let selectedBadgeKeys = new Set(); // ausgewählte BADGE_FIELDS keys
+  // ── Generische Mehrfachauswahl-Filter (Möglichkeiten & Fachbereiche) ──
+  // Erzeugt einen unabhängigen Filter-Zustand mit UND/ODER-Logik und
+  // verdrahtet Dropdown, Checkboxen und Toggle-Buttons automatisch.
+  function createMultiFilter(config) {
+    const state = {
+      mode: config.fixedMode || 'or',   // 'or' oder 'and' (oder fest, falls kein Toggle)
+      selected: new Set(),
+    };
 
-  function matchesBadgeFilter(c) {
-    if (selectedBadgeKeys.size === 0) return true;
-    const keys = [...selectedBadgeKeys];
-    if (badgeFilterMode === 'and') {
-      return keys.every(key => isMarked(c[key]));
+    function matches(c) {
+      if (state.selected.size === 0) return true;
+      const values = [...state.selected];
+      if (state.mode === 'and') {
+        return values.every(v => config.hasValue(c, v));
+      }
+      return values.some(v => config.hasValue(c, v));
     }
-    return keys.some(key => isMarked(c[key]));
+
+    function updateButtonLabel() {
+      const btn = document.getElementById(config.btnId);
+      const count = state.selected.size;
+      btn.textContent = count > 0 ? `${config.label} (${count}) ▾` : `${config.label} ▾`;
+      btn.classList.toggle('has-selection', count > 0);
+    }
+
+    function populateOptions(options) {
+      const container = document.getElementById(config.optionsId);
+      container.innerHTML = options.map(opt => `
+        <label class="badge-filter-option">
+          <input type="checkbox" value="${opt.value.replace(/"/g, '&quot;')}">
+          <span>${opt.label}</span>
+        </label>
+      `).join('');
+
+      container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+        cb.addEventListener('change', () => {
+          if (cb.checked) {
+            state.selected.add(cb.value);
+          } else {
+            state.selected.delete(cb.value);
+          }
+          updateButtonLabel();
+          renderMarkers();
+        });
+      });
+
+      // Falls ein Suchfeld konfiguriert ist: aktuellen Suchtext erneut anwenden,
+      // damit die Liste nach Neuaufbau (z.B. neue Daten) weiter gefiltert bleibt.
+      if (config.searchInputId) {
+        filterOptionsBySearch(document.getElementById(config.searchInputId).value);
+      }
+    }
+
+    function filterOptionsBySearch(query) {
+      const container = document.getElementById(config.optionsId);
+      const q = query.trim().toLowerCase();
+      let anyVisible = false;
+
+      container.querySelectorAll('.badge-filter-option').forEach(label => {
+        const text = label.textContent.trim().toLowerCase();
+        const visible = !q || text.includes(q);
+        label.classList.toggle('is-hidden', !visible);
+        if (visible) anyVisible = true;
+      });
+
+      // "Keine Treffer"-Hinweis verwalten
+      let emptyMsg = container.querySelector('.multi-filter-empty');
+      if (!anyVisible) {
+        if (!emptyMsg) {
+          emptyMsg = document.createElement('div');
+          emptyMsg.className = 'multi-filter-empty';
+          emptyMsg.textContent = 'Keine Treffer';
+          container.appendChild(emptyMsg);
+        }
+      } else if (emptyMsg) {
+        emptyMsg.remove();
+      }
+    }
+
+    function reset() {
+      state.selected.clear();
+      state.mode = config.fixedMode || 'or';
+      document.querySelectorAll(`#${config.optionsId} input[type="checkbox"]`).forEach(cb => cb.checked = false);
+      if (config.modeOrId) {
+        document.getElementById(config.modeOrId).classList.add('active');
+        document.getElementById(config.modeAndId).classList.remove('active');
+      }
+      if (config.searchInputId) {
+        document.getElementById(config.searchInputId).value = '';
+        filterOptionsBySearch('');
+      }
+      updateButtonLabel();
+    }
+
+    // Dropdown öffnen/schließen (alle anderen werden dabei automatisch geschlossen)
+    document.getElementById(config.btnId).addEventListener('click', (e) => {
+      e.stopPropagation();
+      const dropdown = document.getElementById(config.dropdownId);
+      const willOpen = !dropdown.classList.contains('open');
+      document.querySelectorAll('.multi-filter-dropdown.open').forEach(d => d.classList.remove('open'));
+      if (willOpen) dropdown.classList.add('open');
+    });
+
+    // UND/ODER Toggle (nur falls konfiguriert)
+    if (config.modeOrId && config.modeAndId) {
+      document.getElementById(config.modeOrId).addEventListener('click', () => {
+        state.mode = 'or';
+        document.getElementById(config.modeOrId).classList.add('active');
+        document.getElementById(config.modeAndId).classList.remove('active');
+        renderMarkers();
+      });
+      document.getElementById(config.modeAndId).addEventListener('click', () => {
+        state.mode = 'and';
+        document.getElementById(config.modeAndId).classList.add('active');
+        document.getElementById(config.modeOrId).classList.remove('active');
+        renderMarkers();
+      });
+    }
+
+    // Suchfeld im Dropdown (nur falls konfiguriert)
+    if (config.searchInputId) {
+      document.getElementById(config.searchInputId).addEventListener('input', (e) => {
+        filterOptionsBySearch(e.target.value);
+      });
+      // Klick ins Suchfeld soll das Dropdown nicht schließen
+      document.getElementById(config.searchInputId).addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+    }
+
+    return { matches, populateOptions, reset, dropdownId: config.dropdownId };
   }
+
+  // ── Möglichkeiten-Filter (Messe/Praktika/Thesis/etc., feste Liste) ──
+  const moeglichkeitenFilter = createMultiFilter({
+    btnId: 'badge-filter-btn',
+    dropdownId: 'badge-filter-dropdown',
+    optionsId: 'badge-filter-options',
+    modeOrId: 'badge-mode-or',
+    modeAndId: 'badge-mode-and',
+    label: 'Möglichkeiten',
+    hasValue: (c, key) => isMarked(c[key]),
+  });
+
+  // ── Fachbereiche-Filter (dynamische Liste aus ";"-getrennten Werten) ──
+  const fachbereichFilter = createMultiFilter({
+    btnId: 'fachbereich-filter-btn',
+    dropdownId: 'fachbereich-filter-dropdown',
+    optionsId: 'fachbereich-filter-options',
+    modeOrId: 'fachbereich-mode-or',
+    modeAndId: 'fachbereich-mode-and',
+    label: 'Fachbereiche',
+    hasValue: (c, value) => splitMultiValue(c['Gesuchte Fachbereiche und Studiengänge']).includes(value),
+  });
+
+  // ── Standort-Filter (dynamische Liste aus ";"-getrennten Werten, mit Suche, fest ODER) ──
+  const standortFilter = createMultiFilter({
+    btnId: 'standort-filter-btn',
+    dropdownId: 'standort-filter-dropdown',
+    optionsId: 'standort-filter-options',
+    searchInputId: 'standort-search-input',
+    fixedMode: 'or',
+    label: 'Standorte',
+    hasValue: (c, value) => splitMultiValue(c['Standorte']).includes(value),
+  });
+
+  // ── Branchen-Filter (dynamische Liste aus "/"-getrennten Werten, mit Suche, fest ODER) ──
+  const brancheFilter = createMultiFilter({
+    btnId: 'branche-filter-btn',
+    dropdownId: 'branche-filter-dropdown',
+    optionsId: 'branche-filter-options',
+    searchInputId: 'branche-search-input',
+    fixedMode: 'or',
+    label: 'Branchen',
+    hasValue: (c, value) => splitBranche(c['Branche']).includes(value),
+  });
+
+  // Dropdowns schließen, wenn außerhalb geklickt wird
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.badge-filter-wrap')) {
+      document.querySelectorAll('.multi-filter-dropdown.open').forEach(d => d.classList.remove('open'));
+    }
+  });
 
   // ── Marker rendern ──
   function renderMarkers() {
-    const query    = document.getElementById('search-input').value.trim();
-    const branche  = document.getElementById('filter-branche').value;
-    const standort = document.getElementById('filter-standort').value;
+    const query = document.getElementById('search-input').value.trim();
 
     // Alte Marker entfernen
     activeMarkers.forEach(m => map.removeLayer(m));
@@ -580,9 +884,10 @@
 
     allData.forEach((c, index) => {
       if (!matchesSearch(c, query)) return;
-      if (branche  && c['Branche']   !== branche)  return;
-      if (standort && c['Standorte'] !== standort) return;
-      if (!matchesBadgeFilter(c)) return;
+      if (!brancheFilter.matches(c)) return;
+      if (!standortFilter.matches(c)) return;
+      if (!moeglichkeitenFilter.matches(c)) return;
+      if (!fachbereichFilter.matches(c)) return;
 
       const lat = parseFloat(c.latitude);
       const lng = parseFloat(c.longitude);
@@ -599,84 +904,27 @@
       `${activeMarkers.length} Unternehmen`;
   }
 
-  // ── Badge-Filter-Dropdown befüllen ──
-  function populateBadgeFilterOptions() {
-    const container = document.getElementById('badge-filter-options');
-    container.innerHTML = BADGE_FIELDS.map(f => `
-      <label class="badge-filter-option">
-        <input type="checkbox" value="${f.key}">
-        <span>${f.label}</span>
-      </label>
-    `).join('');
-
-    container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-      cb.addEventListener('change', () => {
-        if (cb.checked) {
-          selectedBadgeKeys.add(cb.value);
-        } else {
-          selectedBadgeKeys.delete(cb.value);
-        }
-        updateBadgeFilterButtonState();
-        renderMarkers();
-      });
-    });
-  }
-
-  function updateBadgeFilterButtonState() {
-    const btn = document.getElementById('badge-filter-btn');
-    const count = selectedBadgeKeys.size;
-    btn.textContent = count > 0 ? `Möglichkeiten (${count}) ▾` : 'Möglichkeiten ▾';
-    btn.classList.toggle('has-selection', count > 0);
-  }
-
-  // ── Badge-Filter-Dropdown öffnen/schließen ──
-  document.getElementById('badge-filter-btn').addEventListener('click', (e) => {
-    e.stopPropagation();
-    document.getElementById('badge-filter-dropdown').classList.toggle('open');
-  });
-
-  document.addEventListener('click', (e) => {
-    const wrap = document.querySelector('.badge-filter-wrap');
-    if (!wrap.contains(e.target)) {
-      document.getElementById('badge-filter-dropdown').classList.remove('open');
-    }
-  });
-
-  // ── UND/ODER Toggle ──
-  document.getElementById('badge-mode-or').addEventListener('click', () => {
-    badgeFilterMode = 'or';
-    document.getElementById('badge-mode-or').classList.add('active');
-    document.getElementById('badge-mode-and').classList.remove('active');
-    renderMarkers();
-  });
-
-  document.getElementById('badge-mode-and').addEventListener('click', () => {
-    badgeFilterMode = 'and';
-    document.getElementById('badge-mode-and').classList.add('active');
-    document.getElementById('badge-mode-or').classList.remove('active');
-    renderMarkers();
-  });
-
   // ── Dropdowns befüllen ──
   function populateDropdowns(data) {
-    const branchen  = [...new Set(data.map(c => c['Branche']).filter(Boolean))].sort();
-    const standorte = [...new Set(data.map(c => c['Standorte']).filter(Boolean))].sort();
+    // Branchen: Werte aus "/"-getrennten Strings aufsplitten und deduplizieren
+    const branchenSet = new Set();
+    data.forEach(c => splitBranche(c['Branche']).forEach(b => branchenSet.add(b)));
+    const branchen = [...branchenSet].sort();
 
-    const bSelect = document.getElementById('filter-branche');
-    branchen.forEach(b => {
-      const opt = document.createElement('option');
-      opt.value = opt.textContent = b;
-      bSelect.appendChild(opt);
-    });
+    // Standorte: Werte aus ";"-getrennten Strings aufsplitten und deduplizieren
+    const standorteSet = new Set();
+    data.forEach(c => splitMultiValue(c['Standorte']).forEach(s => standorteSet.add(s)));
+    const standorte = [...standorteSet].sort();
 
-    const sSelect = document.getElementById('filter-standort');
-    standorte.forEach(s => {
-      const opt = document.createElement('option');
-      opt.value = opt.textContent = s;
-      sSelect.appendChild(opt);
-    });
+    // Fachbereiche: ebenso aus ";"-getrennten Strings aufsplitten
+    const fachbereicheSet = new Set();
+    data.forEach(c => splitMultiValue(c['Gesuchte Fachbereiche und Studiengänge']).forEach(f => fachbereicheSet.add(f)));
+    const fachbereiche = [...fachbereicheSet].sort();
 
-    populateBadgeFilterOptions();
+    brancheFilter.populateOptions(branchen.map(b => ({ value: b, label: b })));
+    standortFilter.populateOptions(standorte.map(s => ({ value: s, label: s })));
+    moeglichkeitenFilter.populateOptions(BADGE_FIELDS.map(f => ({ value: f.key, label: f.label })));
+    fachbereichFilter.populateOptions(fachbereiche.map(f => ({ value: f, label: f })));
   }
 
   // ── Daten laden ──
@@ -695,20 +943,59 @@
   }
 
   // ── Event Listener ──
-  document.getElementById('search-input') .addEventListener('input',  renderMarkers);
-  document.getElementById('filter-branche') .addEventListener('change', renderMarkers);
-  document.getElementById('filter-standort').addEventListener('change', renderMarkers);
+  document.getElementById('search-input').addEventListener('input', renderMarkers);
+
+  // ── Such-Lupe: Eingabefeld ein-/ausklappen ──
+  const searchInput = document.getElementById('search-input');
+  const searchToggleBtn = document.getElementById('search-toggle-btn');
+
+  function openSearch() {
+    searchInput.classList.add('open');
+    searchToggleBtn.classList.add('active');
+    searchInput.focus();
+  }
+
+  function closeSearch() {
+    searchInput.classList.remove('open');
+    searchToggleBtn.classList.remove('active');
+  }
+
+  searchToggleBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (searchInput.classList.contains('open')) {
+      // Bereits offen: bei leerem Feld schließen, sonst nur fokussieren
+      if (!searchInput.value.trim()) {
+        closeSearch();
+      } else {
+        searchInput.focus();
+      }
+    } else {
+      openSearch();
+    }
+  });
+
+  searchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      searchInput.value = '';
+      renderMarkers();
+      closeSearch();
+    }
+  });
+
+  // Außerhalb klicken: Suchfeld nur schließen, wenn es leer ist
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.search-wrap') && !searchInput.value.trim()) {
+      closeSearch();
+    }
+  });
 
   document.getElementById('reset-btn').addEventListener('click', () => {
     document.getElementById('search-input').value = '';
-    document.getElementById('filter-branche').value  = '';
-    document.getElementById('filter-standort').value = '';
-    selectedBadgeKeys.clear();
-    document.querySelectorAll('#badge-filter-options input[type="checkbox"]').forEach(cb => cb.checked = false);
-    updateBadgeFilterButtonState();
-    badgeFilterMode = 'or';
-    document.getElementById('badge-mode-or').classList.add('active');
-    document.getElementById('badge-mode-and').classList.remove('active');
+    closeSearch();
+    brancheFilter.reset();
+    standortFilter.reset();
+    moeglichkeitenFilter.reset();
+    fachbereichFilter.reset();
     renderMarkers();
   });
 
