@@ -3,14 +3,31 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ECRI-Netzwerk</title>
+  <title>Unternehmenskarte</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
   <style>
+    :root {
+      --navy: #2b2f36;
+      --navy-soft: #3a3f48;
+      --accent: #4a4f58;
+      --accent-soft: #eceef0;
+      --surface: #ffffff;
+      --surface-subtle: #f5f5f6;
+      --border: #e2e3e6;
+      --text: #1f2125;
+      --text-muted: #8a8d93;
+      --radius-lg: 12px;
+      --radius-md: 8px;
+      --radius-sm: 6px;
+      --shadow-float: 0 10px 30px rgba(20, 21, 24, 0.16);
+      --shadow-soft: 0 2px 10px rgba(20, 21, 24, 0.08);
+    }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      background: #f0f2f5;
+      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      background: var(--surface-subtle);
       height: 100vh;
       display: flex;
       flex-direction: column;
@@ -18,21 +35,21 @@
 
     /* ── Top Bar ── */
     #topbar {
-      background: #1a2b4a;
+      background: var(--navy);
       color: #fff;
-      padding: 10px 16px;
+      padding: 12px 18px;
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
       flex-wrap: wrap;
       z-index: 1000;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+      box-shadow: var(--shadow-soft);
     }
 
     #topbar h1 {
-      font-size: 1rem;
+      font-size: 1.02rem;
       font-weight: 700;
-      letter-spacing: 0.03em;
+      letter-spacing: 0.01em;
       white-space: nowrap;
       margin-right: auto;
     }
@@ -44,12 +61,12 @@
     }
 
     #search-toggle-btn {
-      width: 34px;
-      height: 34px;
+      width: 36px;
+      height: 36px;
       flex-shrink: 0;
       border: none;
-      border-radius: 6px;
-      background: #ffffff18;
+      border-radius: var(--radius-sm);
+      background: #ffffff14;
       color: #fff;
       font-size: 1rem;
       cursor: pointer;
@@ -58,18 +75,18 @@
       justify-content: center;
       transition: background 0.2s;
     }
-    #search-toggle-btn:hover { background: #ffffff28; }
-    #search-toggle-btn.active { background: #3a6fd8; }
+    #search-toggle-btn:hover { background: #ffffff24; }
+    #search-toggle-btn.active { background: var(--accent); }
 
     #search-input {
       width: 0;
       min-width: 0;
-      padding: 7px 0;
+      padding: 8px 0;
       margin-left: 0;
-      border-radius: 6px;
+      border-radius: var(--radius-sm);
       border: none;
       font-size: 0.9rem;
-      background: #ffffff18;
+      background: #ffffff14;
       color: #fff;
       outline: none;
       opacity: 0;
@@ -77,29 +94,30 @@
     }
     #search-input.open {
       width: 220px;
-      padding: 7px 12px;
+      padding: 8px 12px;
       margin-left: 8px;
       opacity: 1;
     }
-    #search-input::placeholder { color: #ffffffaa; }
-    #search-input:focus { background: #ffffff28; }
+    #search-input::placeholder { color: #ffffffa0; }
+    #search-input:focus { background: #ffffff24; }
 
     #reset-btn {
-      padding: 7px 14px;
-      border-radius: 6px;
-      border: 1.5px solid #ffffff55;
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid #ffffff3a;
       background: transparent;
       color: #fff;
       font-size: 0.85rem;
+      font-weight: 500;
       cursor: pointer;
       white-space: nowrap;
       transition: background 0.2s;
     }
-    #reset-btn:hover { background: #ffffff18; }
+    #reset-btn:hover { background: #ffffff14; }
 
     #result-count {
       font-size: 0.8rem;
-      color: #ffffffaa;
+      color: #ffffffa0;
       white-space: nowrap;
     }
 
@@ -109,31 +127,32 @@
     }
 
     .multi-filter-btn {
-      padding: 7px 12px;
-      border-radius: 6px;
+      padding: 8px 13px;
+      border-radius: var(--radius-sm);
       border: none;
       font-size: 0.85rem;
-      background: #ffffff18;
+      font-weight: 500;
+      background: #ffffff14;
       color: #fff;
       cursor: pointer;
       white-space: nowrap;
       transition: background 0.2s;
     }
-    .multi-filter-btn:hover { background: #ffffff28; }
+    .multi-filter-btn:hover { background: #ffffff24; }
     .multi-filter-btn.has-selection {
-      background: #3a6fd8;
+      background: var(--accent);
     }
 
     .multi-filter-dropdown {
       display: none;
       position: absolute;
-      top: calc(100% + 6px);
+      top: calc(100% + 8px);
       left: 0;
-      background: #fff;
-      color: #222;
-      border-radius: 8px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.2);
-      padding: 12px;
+      background: var(--surface);
+      color: var(--text);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-float);
+      padding: 14px;
       width: 260px;
       z-index: 1500;
     }
@@ -150,27 +169,27 @@
       justify-content: space-between;
       margin-bottom: 10px;
       padding-bottom: 10px;
-      border-bottom: 1px solid #eee;
+      border-bottom: 1px solid var(--border);
       font-size: 0.78rem;
-      color: #666;
+      color: var(--text-muted);
     }
     .badge-filter-toggle-btn {
       display: flex;
-      border: 1px solid #ccc;
+      border: 1px solid var(--border);
       border-radius: 14px;
       overflow: hidden;
     }
     .badge-filter-toggle-btn button {
       border: none;
-      background: #fff;
+      background: var(--surface);
       padding: 3px 10px;
       font-size: 0.75rem;
       font-weight: 600;
       cursor: pointer;
-      color: #888;
+      color: var(--text-muted);
     }
     .badge-filter-toggle-btn button.active {
-      background: #1a2b4a;
+      background: var(--navy);
       color: #fff;
     }
 
@@ -178,38 +197,231 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 5px 2px;
+      padding: 6px 4px;
       font-size: 0.85rem;
       cursor: pointer;
-      border-radius: 4px;
+      border-radius: var(--radius-sm);
     }
-    .badge-filter-option:hover { background: #f5f6f8; }
-    .badge-filter-option input { cursor: pointer; }
+    .badge-filter-option:hover { background: var(--surface-subtle); }
+    .badge-filter-option input { cursor: pointer; accent-color: var(--accent); }
 
     .multi-filter-search {
       width: 100%;
-      padding: 6px 10px;
+      padding: 7px 10px;
       margin-bottom: 8px;
-      border: 1px solid #ddd;
-      border-radius: 6px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
       font-size: 0.85rem;
       outline: none;
+      transition: border-color 0.15s;
     }
-    .multi-filter-search:focus { border-color: #1a2b4a; }
+    .multi-filter-search:focus { border-color: var(--accent); }
 
     .badge-filter-option.is-hidden { display: none; }
 
     .multi-filter-empty {
       font-size: 0.8rem;
-      color: #999;
-      padding: 6px 2px;
+      color: var(--text-muted);
+      padding: 6px 4px;
     }
 
-    /* ── Map ── */
-    #map {
+    /* ── Inhaltsbereich: Karte mit schwebender Sidebar ── */
+    #content-area {
       flex: 1;
-      width: 100%;
       position: relative;
+      overflow: hidden;
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    /* ── Sidebar mit Unternehmensliste (schwebt über der Karte) ── */
+    #sidebar {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      bottom: 14px;
+      width: 320px;
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-float);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 1050;
+      transition: opacity 0.18s ease, transform 0.18s ease;
+    }
+    #sidebar.collapsed {
+      opacity: 0;
+      transform: translateX(12px);
+      pointer-events: none;
+    }
+
+    #sidebar-header {
+      padding: 13px 16px;
+      background: var(--navy);
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      color: #fff;
+      white-space: nowrap;
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    #sidebar-close-btn {
+      width: 26px;
+      height: 26px;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: #ffffff14;
+      color: #fff;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+    #sidebar-close-btn:hover { background: #ffffff28; }
+
+    #sidebar-list {
+      flex: 1;
+      overflow-y: auto;
+      white-space: nowrap;
+    }
+
+    .sidebar-item {
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--border);
+      border-left: 3px solid transparent;
+      cursor: pointer;
+      transition: background 0.15s, border-left-color 0.15s;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .sidebar-item:hover { background: var(--surface-subtle); }
+    .sidebar-item.active {
+      background: var(--accent-soft);
+      border-left-color: var(--accent);
+    }
+
+    .sidebar-item-logo {
+      width: 30px;
+      height: 30px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      object-fit: contain;
+      background: var(--surface-subtle);
+      border: 1px solid var(--border);
+      margin-top: 1px;
+    }
+
+    .sidebar-item-logo-placeholder {
+      width: 30px;
+      height: 30px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      background: var(--navy);
+      color: #fff;
+      font-size: 0.78rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 1px;
+    }
+
+    .sidebar-item-text {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .sidebar-item-name {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--text);
+      white-space: normal;
+      margin-bottom: 2px;
+    }
+    .sidebar-item-meta {
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      white-space: normal;
+    }
+
+    .sidebar-empty {
+      padding: 24px 16px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      white-space: normal;
+      text-align: center;
+    }
+
+    /* ── Sidebar Ein-/Ausklapp-Knopf ──
+       Standardposition oben rechts; wird per JS-gesetzter CSS-Variable
+       nach links verschoben, falls der Leaflet-Layer-Schalter dort sitzt,
+       damit sich beide nie überlappen. ── */
+    #sidebar-toggle-btn {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      z-index: 1040;
+      width: 36px;
+      height: 36px;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      box-shadow: var(--shadow-float);
+      color: var(--navy);
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s ease, right 0.18s ease;
+    }
+    #sidebar-toggle-btn.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    #sidebar-toggle-btn:hover { background: var(--surface-subtle); }
+
+    /* ── Leaflet Layer-Schalter: dynamisch neben Sidebar/Toggle-Button ──
+       Die rechte Position wird per JS über --layers-control-right gesetzt,
+       je nachdem ob die Sidebar offen ist (dann links von ihr) oder
+       eingeklappt (dann links vom ☰-Button). So überlappen sie sich nie. */
+    .leaflet-top.leaflet-right {
+      right: var(--layers-control-right, 14px) !important;
+      transition: right 0.18s ease;
+    }
+    .layers-control-box {
+      border-radius: var(--radius-sm) !important;
+      box-shadow: var(--shadow-float) !important;
+      border: none !important;
+      font-family: inherit;
+    }
+    .layers-control-box a {
+      border-radius: var(--radius-sm) !important;
+    }
+
+    /* ── Logo-Marker (Firmen-Favicons) ── */
+    .company-logo-marker {
+      background: #fff;
+      border-radius: 50%;
+      border: 2px solid #fff;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+      object-fit: contain;
     }
 
     /* ── Popup ── */
@@ -222,14 +434,14 @@
     .popup-inner .popup-name {
       font-size: 1rem;
       font-weight: 700;
-      color: #1a2b4a;
+      color: var(--navy);
       margin-bottom: 3px;
     }
     .popup-inner .popup-branche {
       display: inline-block;
-      background: #e8f0fe;
-      color: #1a2b4a;
-      border-radius: 4px;
+      background: var(--accent-soft);
+      color: var(--navy);
+      border-radius: var(--radius-sm);
       padding: 1px 7px;
       font-size: 0.78rem;
       margin-bottom: 8px;
@@ -238,10 +450,10 @@
       display: flex;
       gap: 6px;
       margin-bottom: 3px;
-      color: #444;
+      color: var(--text);
     }
     .popup-inner .popup-row span:first-child { flex-shrink: 0; }
-    .popup-inner a { color: #1a6bbf; text-decoration: none; }
+    .popup-inner a { color: var(--accent); text-decoration: none; }
     .popup-inner a:hover { text-decoration: underline; }
 
     .popup-badges {
@@ -252,14 +464,14 @@
     }
     .popup-badge {
       font-size: 0.72rem;
-      padding: 2px 7px;
+      padding: 2px 8px;
       border-radius: 10px;
-      background: #f0f0f0;
-      color: #555;
+      background: var(--surface-subtle);
+      color: var(--text-muted);
       white-space: nowrap;
     }
     .popup-badge.active {
-      background: #1a2b4a;
+      background: var(--navy);
       color: #fff;
     }
 
@@ -267,17 +479,17 @@
       display: block;
       width: 100%;
       margin-top: 8px;
-      padding: 6px 0;
-      border: 1.5px solid #1a2b4a;
-      border-radius: 6px;
-      background: #fff;
-      color: #1a2b4a;
+      padding: 7px 0;
+      border: 1.5px solid var(--navy);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--navy);
       font-size: 0.83rem;
       font-weight: 600;
       cursor: pointer;
       transition: background 0.15s;
     }
-    .popup-more-btn:hover { background: #f0f4fa; }
+    .popup-more-btn:hover { background: var(--accent-soft); }
 
     /* ── Detail Panel ── */
     #detail-panel {
@@ -287,7 +499,7 @@
       width: 360px;
       max-width: 100vw;
       height: 100%;
-      background: #fff;
+      background: var(--surface);
       box-shadow: -4px 0 16px rgba(0,0,0,0.18);
       z-index: 2000;
       transition: right 0.25s ease;
@@ -303,26 +515,26 @@
       width: 30px;
       height: 30px;
       border: none;
-      background: #f0f2f5;
+      background: var(--surface-subtle);
       border-radius: 50%;
       font-size: 1.1rem;
-      color: #444;
+      color: var(--text);
       cursor: pointer;
       line-height: 1;
     }
-    #detail-panel .panel-close:hover { background: #e2e5ea; }
+    #detail-panel .panel-close:hover { background: var(--border); }
 
     #detail-panel .panel-name {
       font-size: 1.25rem;
       font-weight: 700;
-      color: #1a2b4a;
+      color: var(--navy);
       margin: 6px 36px 4px 0;
     }
     #detail-panel .panel-branche {
       display: inline-block;
-      background: #e8f0fe;
-      color: #1a2b4a;
-      border-radius: 4px;
+      background: var(--accent-soft);
+      color: var(--navy);
+      border-radius: var(--radius-sm);
       padding: 2px 8px;
       font-size: 0.8rem;
       margin-bottom: 16px;
@@ -335,20 +547,20 @@
       font-size: 0.72rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: #999;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
       margin-bottom: 8px;
     }
     .panel-row {
       display: flex;
       gap: 8px;
       font-size: 0.9rem;
-      color: #333;
+      color: var(--text);
       margin-bottom: 6px;
       line-height: 1.4;
     }
     .panel-row span:first-child { flex-shrink: 0; width: 20px; }
-    .panel-row a { color: #1a6bbf; text-decoration: none; }
+    .panel-row a { color: var(--accent); text-decoration: none; }
     .panel-row a:hover { text-decoration: underline; }
 
     .panel-badges {
@@ -358,13 +570,13 @@
     }
     .panel-badge {
       font-size: 0.78rem;
-      padding: 4px 10px;
+      padding: 4px 11px;
       border-radius: 12px;
-      background: #f0f0f0;
-      color: #888;
+      background: var(--surface-subtle);
+      color: var(--text-muted);
     }
     .panel-badge.active {
-      background: #1a2b4a;
+      background: var(--navy);
       color: #fff;
     }
 
@@ -375,7 +587,7 @@
     }
     .panel-multi-badge {
       font-size: 0.78rem;
-      padding: 4px 10px;
+      padding: 4px 11px;
       border-radius: 12px;
       font-weight: 600;
     }
@@ -383,7 +595,7 @@
     #detail-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.25);
+      background: rgba(22, 34, 61, 0.3);
       z-index: 1999;
       opacity: 0;
       pointer-events: none;
@@ -398,7 +610,7 @@
 <body>
 
 <div id="topbar">
-  <h1>🏢 ECRI-Netzwerk</h1>
+  <h1>🏢 Unternehmenskarte</h1>
 
   <div class="search-wrap">
     <button id="search-toggle-btn" title="Suche">🔍</button>
@@ -453,7 +665,18 @@
   <span id="result-count"></span>
 </div>
 
-<div id="map"></div>
+<div id="content-area">
+  <div id="map"></div>
+  <button id="sidebar-toggle-btn" title="Liste ein-/ausblenden">☰</button>
+
+  <div id="sidebar">
+    <div id="sidebar-header">
+      <span>Unternehmen</span>
+      <button id="sidebar-close-btn" title="Liste ausblenden">✕</button>
+    </div>
+    <div id="sidebar-list"></div>
+  </div>
+</div>
 
 <div id="detail-overlay"></div>
 <div id="detail-panel">
@@ -509,11 +732,15 @@
 
   voyagerLayer.addTo(map);
 
-  L.control.layers({
+  const layersControl = L.control.layers({
     'Voyager (bunt)': voyagerLayer,
     'Positron (hell)': lightLayer,
     'Standard OSM': osmLayer,
   }).addTo(map);
+
+  // Eindeutige Klasse für die Leaflet-Layer-Schaltfläche, damit wir sie
+  // per CSS-Variable dynamisch neben die Sidebar/den Sidebar-Button setzen können.
+  layersControl.getContainer().classList.add('layers-control-box');
 
   // Platzhalter-Koordinaten (keine echten Standorte)
   const PLACEHOLDER_LAT = 51.4323195;
@@ -521,11 +748,42 @@
 
   let allData = [];
   let activeMarkers = [];
+  let markersByIndex = new Map(); // Index in allData → Leaflet-Marker (für Sidebar-Klick)
 
   // ── Hilfsfunktion: URL normalisieren ──
   function normalizeUrl(url) {
     if (!url) return null;
     return url.startsWith('http') ? url : 'https://' + url;
+  }
+
+  // ── Hilfsfunktion: Domain aus einer URL extrahieren (für Favicon-Lookup) ──
+  function extractDomain(url) {
+    if (!url) return null;
+    try {
+      return new URL(normalizeUrl(url)).hostname.replace(/^www\./, '');
+    } catch {
+      return null;
+    }
+  }
+
+  // ── Logo-Marker-Icon bauen (Favicon der Firmen-Webseite) ──
+  // Fällt automatisch auf den Standard-Leaflet-Marker zurück, falls die
+  // Firma keine Webseite hat oder das Favicon nicht ladbar ist.
+  const DEFAULT_ICON = new L.Icon.Default();
+
+  function buildCompanyIcon(c) {
+    const domain = extractDomain(c['Webseite']);
+    if (!domain) return DEFAULT_ICON;
+
+    const faviconUrl = `https://www.google.com/s2/favicons?sz=64&domain=${encodeURIComponent(domain)}`;
+
+    return L.icon({
+      iconUrl: faviconUrl,
+      iconSize: [30, 30],
+      iconAnchor: [15, 15],
+      popupAnchor: [0, -15],
+      className: 'company-logo-marker',
+    });
   }
 
   // ── Hilfsfunktion: "X" in Badge-Status umwandeln ──
@@ -881,6 +1139,9 @@
     // Alte Marker entfernen
     activeMarkers.forEach(m => map.removeLayer(m));
     activeMarkers = [];
+    markersByIndex.clear();
+
+    const visibleIndices = [];
 
     allData.forEach((c, index) => {
       if (!matchesSearch(c, query)) return;
@@ -894,14 +1155,84 @@
       if (isNaN(lat) || isNaN(lng)) return;
       if (lat === PLACEHOLDER_LAT && lng === PLACEHOLDER_LNG) return;
 
-      const marker = L.marker([lat, lng])
+      const marker = L.marker([lat, lng], { icon: buildCompanyIcon(c) })
         .addTo(map)
         .bindPopup(buildPopup(c, index), { maxWidth: 300 });
+
+      // Falls das Favicon-Bild nicht lädt (404, ungültige Domain, o.ä.),
+      // automatisch auf den Standard-Marker zurückfallen.
+      const imgEl = marker.getElement()?.querySelector('img');
+      if (imgEl) {
+        imgEl.addEventListener('error', () => marker.setIcon(DEFAULT_ICON), { once: true });
+      }
+
       activeMarkers.push(marker);
+      markersByIndex.set(index, marker);
+      visibleIndices.push(index);
     });
 
     document.getElementById('result-count').textContent =
       `${activeMarkers.length} Unternehmen`;
+
+    renderSidebarList(visibleIndices);
+  }
+
+  // ── Sidebar: Liste der aktuell gefilterten Unternehmen ──
+  function renderSidebarList(visibleIndices) {
+    const container = document.getElementById('sidebar-list');
+
+    if (visibleIndices.length === 0) {
+      container.innerHTML = '<div class="sidebar-empty">Keine Unternehmen gefunden.</div>';
+      return;
+    }
+
+    // Alphabetisch sortieren für eine übersichtliche Liste
+    const sorted = [...visibleIndices].sort((a, b) =>
+      (allData[a]['Unternehmen'] ?? '').localeCompare(allData[b]['Unternehmen'] ?? '', 'de')
+    );
+
+    container.innerHTML = sorted.map(index => {
+      const c = allData[index];
+      const meta = [c['Branche'], c['Standorte']].filter(Boolean).join(' · ');
+      const name = c['Unternehmen'] ?? '';
+      const initial = name.trim().charAt(0).toUpperCase() || '?';
+      const domain = extractDomain(c['Webseite']);
+
+      const logoHtml = domain
+        ? `<img class="sidebar-item-logo" src="https://www.google.com/s2/favicons?sz=64&domain=${encodeURIComponent(domain)}"
+              alt="" onerror="this.outerHTML='<div class=&quot;sidebar-item-logo-placeholder&quot;>${initial}</div>'">`
+        : `<div class="sidebar-item-logo-placeholder">${initial}</div>`;
+
+      return `
+        <div class="sidebar-item" data-index="${index}">
+          ${logoHtml}
+          <div class="sidebar-item-text">
+            <div class="sidebar-item-name">${name}</div>
+            ${meta ? `<div class="sidebar-item-meta">${meta}</div>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    container.querySelectorAll('.sidebar-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const index = parseInt(item.dataset.index, 10);
+        focusCompanyOnMap(index);
+      });
+    });
+  }
+
+  // ── Karte zu einem Unternehmen zentrieren und Popup öffnen ──
+  function focusCompanyOnMap(index) {
+    const marker = markersByIndex.get(index);
+    if (!marker) return;
+
+    map.setView(marker.getLatLng(), Math.max(map.getZoom(), 12));
+    marker.openPopup();
+
+    document.querySelectorAll('.sidebar-item').forEach(el => {
+      el.classList.toggle('active', parseInt(el.dataset.index, 10) === index);
+    });
   }
 
   // ── Dropdowns befüllen ──
@@ -998,6 +1329,35 @@
     fachbereichFilter.reset();
     renderMarkers();
   });
+
+  // ── Sidebar ein-/ausklappen ──
+  // Die Sidebar schwebt über der Karte, daher ändert sich die Kartengröße
+  // nicht mehr beim Auf-/Zuklappen – kein invalidateSize() nötig.
+  // Der Leaflet-Layer-Schalter (oben rechts) wird hier ebenfalls dynamisch
+  // verschoben, damit er sich nie mit der Sidebar oder ihrem Auf-Knopf überlappt.
+  const SIDEBAR_WIDTH = 320;
+  const SIDEBAR_GAP = 14;
+  const TOGGLE_BTN_WIDTH = 36;
+
+  function setSidebarOpen(open) {
+    document.getElementById('sidebar').classList.toggle('collapsed', !open);
+    document.getElementById('sidebar-toggle-btn').classList.toggle('visible', !open);
+
+    const root = document.documentElement.style;
+    if (open) {
+      // Layer-Schalter links von der offenen Sidebar platzieren
+      root.setProperty('--layers-control-right', `${SIDEBAR_GAP + SIDEBAR_WIDTH + SIDEBAR_GAP}px`);
+    } else {
+      // Sidebar zu: Layer-Schalter links vom kleinen ☰-Button platzieren
+      root.setProperty('--layers-control-right', `${SIDEBAR_GAP + TOGGLE_BTN_WIDTH + 10}px`);
+    }
+  }
+
+  document.getElementById('sidebar-toggle-btn').addEventListener('click', () => setSidebarOpen(true));
+  document.getElementById('sidebar-close-btn').addEventListener('click', () => setSidebarOpen(false));
+
+  // Initiale Position setzen (Sidebar startet offen)
+  setSidebarOpen(true);
 
   loadCompanies();
 </script>
