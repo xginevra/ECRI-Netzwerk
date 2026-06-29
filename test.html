@@ -1,1005 +1,388 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Unternehmenskarte</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ECRI-Netzwerk</title>
 
-    body {
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      background: #f0f2f5;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"/>
 
-    /* ── Top Bar ── */
-    #topbar {
-      background: #1a2b4a;
-      color: #fff;
-      padding: 10px 16px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-      z-index: 1000;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-    }
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-    #topbar h1 {
-      font-size: 1rem;
-      font-weight: 700;
-      letter-spacing: 0.03em;
-      white-space: nowrap;
-      margin-right: auto;
-    }
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: #f0f2f5;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
 
-    .search-wrap {
-      display: flex;
-      align-items: center;
-      position: relative;
-    }
+/* TOPBAR */
+#topbar {
+  background: #1a2b4a;
+  color: #fff;
+  padding: 10px 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  z-index: 1000;
+}
+#topbar h1 { font-size: 1rem; margin-right: auto; }
 
-    #search-toggle-btn {
-      width: 34px;
-      height: 34px;
-      flex-shrink: 0;
-      border: none;
-      border-radius: 6px;
-      background: #ffffff18;
-      color: #fff;
-      font-size: 1rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.2s;
-    }
-    #search-toggle-btn:hover { background: #ffffff28; }
-    #search-toggle-btn.active { background: #3a6fd8; }
+/* MAIN */
+#main {
+  position: relative;
+  flex: 1;
+}
+#map {
+  width: 100%;
+  height: 100%;
+}
 
-    #search-input {
-      width: 0;
-      min-width: 0;
-      padding: 7px 0;
-      margin-left: 0;
-      border-radius: 6px;
-      border: none;
-      font-size: 0.9rem;
-      background: #ffffff18;
-      color: #fff;
-      outline: none;
-      opacity: 0;
-      transition: width 0.22s ease, padding 0.22s ease, margin-left 0.22s ease, opacity 0.18s ease;
-    }
-    #search-input.open {
-      width: 220px;
-      padding: 7px 12px;
-      margin-left: 8px;
-      opacity: 1;
-    }
-    #search-input::placeholder { color: #ffffffaa; }
-    #search-input:focus { background: #ffffff28; }
+/* FLOATING LIST */
+#list {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 320px;
+  max-height: calc(100% - 40px);
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+  overflow-y: auto;
+  padding: 12px;
+  z-index: 1000;
+}
 
-    #reset-btn {
-      padding: 7px 14px;
-      border-radius: 6px;
-      border: 1.5px solid #ffffff55;
-      background: transparent;
-      color: #fff;
-      font-size: 0.85rem;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: background 0.2s;
-    }
-    #reset-btn:hover { background: #ffffff18; }
+/* CARD */
+.list-item {
+  padding: 12px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  border: 1px solid #eee;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.list-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+}
+.list-item.active {
+  border-color: #3a6fd8;
+  box-shadow: 0 0 0 2px rgba(58,111,216,0.2);
+}
+.list-name {
+  font-weight: 600;
+  color: #1a2b4a;
+}
+.list-meta {
+  font-size: 0.75rem;
+  color: #666;
+  margin-top: 4px;
+}
 
-    #result-count {
-      font-size: 0.8rem;
-      color: #ffffffaa;
-      white-space: nowrap;
-    }
+/* DETAIL PANEL */
+#detail-panel {
+  position: fixed;
+  right: -360px;
+  top: 0;
+  width: 340px;
+  height: 100%;
+  background: #fff;
+  box-shadow: -4px 0 16px rgba(0,0,0,0.18);
+  transition: 0.25s;
+  padding: 20px;
+  z-index: 2000;
+  overflow-y: auto;
+}
+#detail-panel.open { right: 0; }
 
-    /* ── Badge-Filter Dropdown (Möglichkeiten & Fachbereiche) ── */
-    .badge-filter-wrap {
-      position: relative;
-    }
+#detail-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.25);
+  opacity: 0;
+  pointer-events: none;
+  transition: 0.25s;
+  z-index: 1999;
+}
+#detail-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+.panel-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: #1a2b4a;
+}
 
-    .multi-filter-btn {
-      padding: 7px 12px;
-      border-radius: 6px;
-      border: none;
-      font-size: 0.85rem;
-      background: #ffffff18;
-      color: #fff;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: background 0.2s;
-    }
-    .multi-filter-btn:hover { background: #ffffff28; }
-    .multi-filter-btn.has-selection {
-      background: #3a6fd8;
-    }
+.panel-section {
+  margin-bottom: 16px;
+}
 
-    .multi-filter-dropdown {
-      display: none;
-      position: absolute;
-      top: calc(100% + 6px);
-      left: 0;
-      background: #fff;
-      color: #222;
-      border-radius: 8px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.2);
-      padding: 12px;
-      width: 260px;
-      z-index: 1500;
-    }
-    .multi-filter-dropdown.open { display: block; }
+.panel-section h3 {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: #888;
+  margin-bottom: 6px;
+}
 
-    .multi-filter-options-scroll {
-      max-height: 240px;
-      overflow-y: auto;
-    }
+.panel-row {
+  font-size: 0.9rem;
+  margin-bottom: 5px;
+  color: #333;
+}
 
-    .badge-filter-toggle {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 10px;
-      padding-bottom: 10px;
-      border-bottom: 1px solid #eee;
-      font-size: 0.78rem;
-      color: #666;
-    }
-    .badge-filter-toggle-btn {
-      display: flex;
-      border: 1px solid #ccc;
-      border-radius: 14px;
-      overflow: hidden;
-    }
-    .badge-filter-toggle-btn button {
-      border: none;
-      background: #fff;
-      padding: 3px 10px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      cursor: pointer;
-      color: #888;
-    }
-    .badge-filter-toggle-btn button.active {
-      background: #1a2b4a;
-      color: #fff;
-    }
+.panel-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
 
-    .badge-filter-option {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 5px 2px;
-      font-size: 0.85rem;
-      cursor: pointer;
-      border-radius: 4px;
-    }
-    .badge-filter-option:hover { background: #f5f6f8; }
-    .badge-filter-option input { cursor: pointer; }
+.panel-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: #eef1f5;
+  font-size: 0.75rem;
+}
 
-    .multi-filter-search {
-      width: 100%;
-      padding: 6px 10px;
-      margin-bottom: 8px;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      font-size: 0.85rem;
-      outline: none;
-    }
-    .multi-filter-search:focus { border-color: #1a2b4a; }
-
-    .badge-filter-option.is-hidden { display: none; }
-
-    .multi-filter-empty {
-      font-size: 0.8rem;
-      color: #999;
-      padding: 6px 2px;
-    }
-
-    /* ── Map ── */
-    #map {
-      flex: 1;
-      width: 100%;
-      position: relative;
-    }
-
-    /* ── Popup ── */
-    .popup-inner {
-      min-width: 220px;
-      max-width: 280px;
-      line-height: 1.5;
-      font-size: 0.88rem;
-    }
-    .popup-inner .popup-name {
-      font-size: 1rem;
-      font-weight: 700;
-      color: #1a2b4a;
-      margin-bottom: 3px;
-    }
-    .popup-inner .popup-branche {
-      display: inline-block;
-      background: #e8f0fe;
-      color: #1a2b4a;
-      border-radius: 4px;
-      padding: 1px 7px;
-      font-size: 0.78rem;
-      margin-bottom: 8px;
-    }
-    .popup-inner .popup-row {
-      display: flex;
-      gap: 6px;
-      margin-bottom: 3px;
-      color: #444;
-    }
-    .popup-inner .popup-row span:first-child { flex-shrink: 0; }
-    .popup-inner a { color: #1a6bbf; text-decoration: none; }
-    .popup-inner a:hover { text-decoration: underline; }
-
-    .popup-badges {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 4px;
-      margin: 8px 0;
-    }
-    .popup-badge {
-      font-size: 0.72rem;
-      padding: 2px 7px;
-      border-radius: 10px;
-      background: #f0f0f0;
-      color: #555;
-      white-space: nowrap;
-    }
-    .popup-badge.active {
-      background: #1a2b4a;
-      color: #fff;
-    }
-
-    .popup-more-btn {
-      display: block;
-      width: 100%;
-      margin-top: 8px;
-      padding: 6px 0;
-      border: 1.5px solid #1a2b4a;
-      border-radius: 6px;
-      background: #fff;
-      color: #1a2b4a;
-      font-size: 0.83rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.15s;
-    }
-    .popup-more-btn:hover { background: #f0f4fa; }
-
-    /* ── Detail Panel ── */
-    #detail-panel {
-      position: fixed;
-      top: 0;
-      right: -380px;
-      width: 360px;
-      max-width: 100vw;
-      height: 100%;
-      background: #fff;
-      box-shadow: -4px 0 16px rgba(0,0,0,0.18);
-      z-index: 2000;
-      transition: right 0.25s ease;
-      overflow-y: auto;
-      padding: 20px;
-    }
-    #detail-panel.open { right: 0; }
-
-    #detail-panel .panel-close {
-      position: absolute;
-      top: 14px;
-      right: 14px;
-      width: 30px;
-      height: 30px;
-      border: none;
-      background: #f0f2f5;
-      border-radius: 50%;
-      font-size: 1.1rem;
-      color: #444;
-      cursor: pointer;
-      line-height: 1;
-    }
-    #detail-panel .panel-close:hover { background: #e2e5ea; }
-
-    #detail-panel .panel-name {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: #1a2b4a;
-      margin: 6px 36px 4px 0;
-    }
-    #detail-panel .panel-branche {
-      display: inline-block;
-      background: #e8f0fe;
-      color: #1a2b4a;
-      border-radius: 4px;
-      padding: 2px 8px;
-      font-size: 0.8rem;
-      margin-bottom: 16px;
-    }
-
-    .panel-section {
-      margin-bottom: 18px;
-    }
-    .panel-section h3 {
-      font-size: 0.72rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: #999;
-      margin-bottom: 8px;
-    }
-    .panel-row {
-      display: flex;
-      gap: 8px;
-      font-size: 0.9rem;
-      color: #333;
-      margin-bottom: 6px;
-      line-height: 1.4;
-    }
-    .panel-row span:first-child { flex-shrink: 0; width: 20px; }
-    .panel-row a { color: #1a6bbf; text-decoration: none; }
-    .panel-row a:hover { text-decoration: underline; }
-
-    .panel-badges {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-    .panel-badge {
-      font-size: 0.78rem;
-      padding: 4px 10px;
-      border-radius: 12px;
-      background: #f0f0f0;
-      color: #888;
-    }
-    .panel-badge.active {
-      background: #1a2b4a;
-      color: #fff;
-    }
-
-    .panel-multi-badges {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-    .panel-multi-badge {
-      font-size: 0.78rem;
-      padding: 4px 10px;
-      border-radius: 12px;
-      font-weight: 600;
-    }
-
-    #detail-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.25);
-      z-index: 1999;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.25s ease;
-    }
-    #detail-overlay.open {
-      opacity: 1;
-      pointer-events: auto;
-    }
-  </style>
+.panel-badge.active {
+  background: #1a2b4a;
+  color: #fff;
+}
+</style>
 </head>
+
 <body>
 
 <div id="topbar">
-  <h1>🏢 Unternehmenskarte</h1>
-
-  <div class="search-wrap">
-    <button id="search-toggle-btn" title="Suche">🔍</button>
-    <input type="text" id="search-input" placeholder="Suche in allen Feldern…" />
-  </div>
-
-  <div class="badge-filter-wrap">
-    <button id="branche-filter-btn" class="multi-filter-btn">Branchen ▾</button>
-    <div id="branche-filter-dropdown" class="multi-filter-dropdown">
-      <input type="text" id="branche-search-input" class="multi-filter-search" placeholder="Branche suchen…">
-      <div id="branche-filter-options" class="multi-filter-options-scroll"></div>
-    </div>
-  </div>
-
-  <div class="badge-filter-wrap">
-    <button id="standort-filter-btn" class="multi-filter-btn">Standorte ▾</button>
-    <div id="standort-filter-dropdown" class="multi-filter-dropdown">
-      <input type="text" id="standort-search-input" class="multi-filter-search" placeholder="Ort suchen…">
-      <div id="standort-filter-options" class="multi-filter-options-scroll"></div>
-    </div>
-  </div>
-
-  <div class="badge-filter-wrap">
-    <button id="badge-filter-btn" class="multi-filter-btn">Möglichkeiten ▾</button>
-    <div id="badge-filter-dropdown" class="multi-filter-dropdown">
-      <div class="badge-filter-toggle">
-        <span>Kombination</span>
-        <div class="badge-filter-toggle-btn">
-          <button id="badge-mode-or" class="active" data-mode="or">ODER</button>
-          <button id="badge-mode-and" data-mode="and">UND</button>
-        </div>
-      </div>
-      <div id="badge-filter-options"></div>
-    </div>
-  </div>
-
-  <div class="badge-filter-wrap">
-    <button id="fachbereich-filter-btn" class="multi-filter-btn">Fachbereiche ▾</button>
-    <div id="fachbereich-filter-dropdown" class="multi-filter-dropdown">
-      <div class="badge-filter-toggle">
-        <span>Kombination</span>
-        <div class="badge-filter-toggle-btn">
-          <button id="fachbereich-mode-or" class="active" data-mode="or">ODER</button>
-          <button id="fachbereich-mode-and" data-mode="and">UND</button>
-        </div>
-      </div>
-      <div id="fachbereich-filter-options" class="multi-filter-options-scroll"></div>
-    </div>
-  </div>
-
-  <button id="reset-btn">✕ Zurücksetzen</button>
+  <h1>🏢 ECRI-Netzwerk</h1>
+  <input id="search-input" placeholder="Suche...">
+  <button id="reset-btn">Reset</button>
   <span id="result-count"></span>
 </div>
 
-<div id="map"></div>
+<div id="main">
+  <div id="map"></div>
+  <div id="list"></div>
+</div>
 
 <div id="detail-overlay"></div>
-<div id="detail-panel">
-  <button class="panel-close" id="panel-close">✕</button>
-  <div id="panel-content"></div>
-</div>
+<div id="detail-panel"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
-  // ──────────────────────────────────────────
-  //  👉 HIER SUPABASE-INFOS
-  // ──────────────────────────────────────────
-  const SUPABASE_URL = "https://gmvodditiwpjlmjvrvec.supabase.co";
-  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdtdm9kZGl0aXdwamxtanZydmVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1OTMxMzUsImV4cCI6MjA5NzE2OTEzNX0.DeZ-S9xsehxaYSzRnDMqSKAVaNp38xzYJg45fqlG6D8";
-  // ──────────────────────────────────────────
 
-  if (typeof window.supabase === 'undefined') {
-    console.error("Supabase-Bibliothek wurde nicht geladen! Mögliche Ursachen: Adblocker/Tracking-Schutz blockiert das CDN-Script, oder kein Internetzugriff.");
-    document.getElementById('map').innerHTML =
-      '<div style="padding:40px;text-align:center;color:#a33;font-family:sans-serif;">' +
-      '⚠ Supabase konnte nicht geladen werden.<br>Bitte Adblocker deaktivieren und Seite neu laden.</div>';
-    throw new Error('Supabase nicht verfügbar – Skript wird gestoppt.');
-  }
+/* SUPABASE */
+const db = supabase.createClient(
+  "https://gmvodditiwpjlmjvrvec.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdtdm9kZGl0aXdwamxtanZydmVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1OTMxMzUsImV4cCI6MjA5NzE2OTEzNX0.DeZ-S9xsehxaYSzRnDMqSKAVaNp38xzYJg45fqlG6D8"
+);
 
-  const { createClient } = window.supabase;
-  const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+/* MAP */
+const map = L.map('map').setView([48.56, 13.43], 9);
 
-  // Karte initialisieren
-  if (typeof L === 'undefined') {
-    console.error("Leaflet (L) wurde nicht geladen! Mögliche Ursachen: Adblocker/Tracking-Schutz blockiert das CDN-Script, oder kein Internetzugriff.");
-    alert("Die Kartenbibliothek (Leaflet) konnte nicht geladen werden. Bitte Adblocker für diese Seite deaktivieren und neu laden.");
-  }
+const voyager = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
+const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
 
-  const map = L.map('map').setView([48.56, 13.43], 9);
-  // ── Kartenstile zur Auswahl ──
-  const lightLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    subdomains: 'abcd',
-    maxZoom: 19,
-  });
+L.control.layers({ "Voyager": voyager, "OSM": osm }).addTo(map);
 
-  const voyagerLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    subdomains: 'abcd',
-    maxZoom: 19,
-  });
+/* STATE */
+let allData = [];
+let activeMarkers = [];
 
-  const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    maxZoom: 19,
-  });
+/* SEARCH */
+function matchesSearch(c, q) {
+  if (!q) return true;
+  q = q.toLowerCase();
+  return Object.values(c).some(v => v && String(v).toLowerCase().includes(q));
+}
 
-  voyagerLayer.addTo(map);
+/* POPUP */
+function buildPopup(c, i) {
+  return `<b>${c["Unternehmen"]}</b><br>${c["Adresse"] ?? ""}`;
+}
 
-  L.control.layers({
-    'Voyager (bunt)': voyagerLayer,
-    'Positron (hell)': lightLayer,
-    'Standard OSM': osmLayer,
-  }).addTo(map);
+/* PANEL */
+function openDetailPanel(index) {
+  const c = allData[index];
 
-  // Platzhalter-Koordinaten (keine echten Standorte)
-  const PLACEHOLDER_LAT = 51.4323195;
-  const PLACEHOLDER_LNG = 6.7707424;
+  // Helfer (falls leer → weg)
+  const show = (label, value, icon="") =>
+    value
+      ? `<div class="panel-row"><span>${icon}</span><span>${value}</span></div>`
+      : "";
 
-  let allData = [];
-  let activeMarkers = [];
+  const split = (val) =>
+    val ? val.split(";").map(v => v.trim()).filter(Boolean) : [];
 
-  // ── Hilfsfunktion: URL normalisieren ──
-  function normalizeUrl(url) {
-    if (!url) return null;
-    return url.startsWith('http') ? url : 'https://' + url;
-  }
+  const badges = (arr) =>
+    arr.map(v => `<span class="panel-badge">${v}</span>`).join("");
 
-  // ── Hilfsfunktion: "X" in Badge-Status umwandeln ──
-  function isMarked(value) {
-    return !!(value && String(value).trim().toUpperCase() === 'X');
-  }
+  document.getElementById("detail-panel").innerHTML = `
 
-  // ── Hilfsfunktion: ";"-getrennte Werte in eine saubere Liste splitten ──
-  function splitMultiValue(value) {
-    if (!value) return [];
-    return String(value)
-      .split(';')
-      .map(v => v.trim())
-      .filter(Boolean);
-  }
+    <h2 class="panel-title">${c["Unternehmen"]}</h2>
 
-  // ── Hilfsfunktion: "/"-getrennte Branchen in eine saubere Liste splitten ──
-  function splitBranche(value) {
-    if (!value) return [];
-    return String(value)
-      .split('/')
-      .map(v => v.trim())
-      .filter(Boolean);
-  }
+    ${c["Branche"] ? `
+      <div class="panel-section">
+        <h3>Branche</h3>
+        <div class="panel-badges">
+          ${c["Branche"].split("/").map(b => `<span class="panel-badge active">${b}</span>`).join("")}
+        </div>
+      </div>` : ""}
 
-  // ── Farbpalette für Mehrfachwert-Badges (Standorte, Fachbereiche) ──
-  const MULTI_BADGE_COLORS = [
-    { bg: '#e8f0fe', fg: '#1a4d8f' }, // blau
-    { bg: '#e6f7ec', fg: '#1f7a45' }, // grün
-    { bg: '#fdeee6', fg: '#b5530f' }, // orange
-    { bg: '#f3e8fd', fg: '#6a2fa3' }, // lila
-    { bg: '#fde8ef', fg: '#a31256' }, // pink
-    { bg: '#fff6db', fg: '#8a6d00' }, // gelb/braun
-    { bg: '#e1f5f7', fg: '#0a6e78' }, // türkis
-  ];
+    <div class="panel-section">
+      <h3>Kontakt</h3>
+      ${show("", c["Adresse"] || c["Standorte"], "📍")}
+      ${show("", c["Telefon"], "📞")}
+      ${c["EMail"] ? `<div class="panel-row">✉️ <a href="mailto:${c["EMail"]}">${c["EMail"]}</a></div>` : ""}
+      ${c["Webseite"] ? `<div class="panel-row">🌐 <a href="https://${c["Webseite"]}" target="_blank">${c["Webseite"]}</a></div>` : ""}
+      ${show("", c["Kontaktperson"], "👤")}
+      ${show("", c["Erreichbarkeit"], "📶")}
+    </div>
 
-  // Stabile Farbzuordnung: gleicher Wert bekommt immer die gleiche Farbe,
-  // basierend auf einem einfachen Hash über den String.
-  function colorForValue(value) {
-    let hash = 0;
-    for (let i = 0; i < value.length; i++) {
-      hash = (hash * 31 + value.charCodeAt(i)) >>> 0;
-    }
-    return MULTI_BADGE_COLORS[hash % MULTI_BADGE_COLORS.length];
-  }
-
-  // Baut farbige Badges für eine getrennte Werteliste (z.B. Standorte, Branchen)
-  // splitter: Funktion zum Aufsplitten des Rohwerts (Standard: ";"-Trennung)
-  function buildMultiValueBadges(value, cssClass, splitter = splitMultiValue) {
-    const values = splitter(value);
-    if (values.length === 0) return '';
-    return values.map(v => {
-      const color = colorForValue(v);
-      return `<span class="${cssClass}" style="background:${color.bg};color:${color.fg}">${v}</span>`;
-    }).join('');
-  }
-
-  // ── Badge-Definitionen (Spalte → Anzeigename) ──
-  const BADGE_FIELDS = [
-    { key: 'Messe DEG',              label: 'Messe DEG' },
-    { key: 'Messe ECRI',             label: 'Messe ECRI' },
-    { key: 'Praktika ECRI',          label: 'Praktika' },
-    { key: 'Projekte \nX\nGastvort. (X)', label: 'Projekte/Gastvortrag' },
-    { key: 'BA-/MA-Thesis',          label: 'BA-/MA-Thesis' },
-    { key: 'Duales Studium',         label: 'Duales Studium' },
-    { key: 'Auslandseinsatz',        label: 'Auslandseinsatz' },
-  ];
-
-  function buildBadges(c, cssClass) {
-    const active = BADGE_FIELDS.filter(f => isMarked(c[f.key]));
-    if (active.length === 0) {
-      return `<span class="${cssClass}">Keine Angaben</span>`;
-    }
-    return active.map(f =>
-      `<span class="${cssClass} active">✓ ${f.label}</span>`
-    ).join('');
-  }
-
-  // ── Kompaktes Popup (Basis-Infos) ──
-  function buildPopup(c, index) {
-    return `
-      <div class="popup-inner">
-        <div class="popup-name">${c['Unternehmen'] ?? ''}</div>
-        ${c['Branche'] ? `<div class="popup-badges" style="margin-bottom:6px">${buildMultiValueBadges(c['Branche'], 'popup-badge', splitBranche)}</div>` : ''}
-        ${(c['Adresse'] || c['Standorte']) ? `<div class="popup-row"><span>📍</span><span>${c['Adresse'] ?? c['Standorte']}</span></div>` : ''}
-        ${c['Telefon'] ? `<div class="popup-row"><span>📞</span><span>${c['Telefon']}</span></div>` : ''}
-        <div class="popup-badges">${buildBadges(c, 'popup-badge')}</div>
-        <button class="popup-more-btn" onclick="openDetailPanel(${index})">Mehr anzeigen</button>
+    ${c["Standorte"] ? `
+    <div class="panel-section">
+      <h3>Standorte</h3>
+      <div class="panel-badges">
+        ${badges(split(c["Standorte"]))}
       </div>
-    `;
-  }
+    </div>` : ""}
 
-  // ── Ausführliches Detail-Panel ──
-  function buildPanel(c) {
-    const website = c['Webseite']
-      ? `<a href="${normalizeUrl(c['Webseite'])}" target="_blank">${c['Webseite']}</a>`
-      : null;
-    const email = c['EMail']
-      ? `<a href="mailto:${c['EMail']}">${c['EMail']}</a>`
-      : null;
-
-    return `
-      <div class="panel-name">${c['Unternehmen'] ?? ''}</div>
-      ${c['Branche'] ? `<div class="panel-multi-badges" style="margin-bottom:16px">${buildMultiValueBadges(c['Branche'], 'panel-multi-badge', splitBranche)}</div>` : ''}
-
-      <div class="panel-section">
-        <h3>Kontakt</h3>
-        ${(c['Adresse'] || c['Standorte']) ? `<div class="panel-row"><span>📍</span><span>${c['Adresse'] ?? c['Standorte']}</span></div>` : ''}
-        ${c['Telefon'] ? `<div class="panel-row"><span>📞</span><span>${c['Telefon']}</span></div>` : ''}
-        ${email ? `<div class="panel-row"><span>✉️</span><span>${email}</span></div>` : ''}
-        ${website ? `<div class="panel-row"><span>🌐</span><span>${website}</span></div>` : ''}
-        ${c['Kontaktperson'] ? `<div class="panel-row"><span>👤</span><span>${c['Kontaktperson']}</span></div>` : ''}
-        ${c['Erreichbarkeit'] ? `<div class="panel-row"><span>📶</span><span>${c['Erreichbarkeit']}</span></div>` : ''}
+    ${c["Gesuchte Fachbereiche und Studiengänge"] ? `
+    <div class="panel-section">
+      <h3>Fachbereiche</h3>
+      <div class="panel-badges">
+        ${badges(split(c["Gesuchte Fachbereiche und Studiengänge"]))}
       </div>
+    </div>` : ""}
 
-      ${c['Standorte'] ? `
-      <div class="panel-section">
-        <h3>Standorte</h3>
-        <div class="panel-multi-badges">${buildMultiValueBadges(c['Standorte'], 'panel-multi-badge')}</div>
-      </div>` : ''}
-
-      ${(c['Gesuchte Fachbereiche und Studiengänge'] || c['MA']) ? `
-      <div class="panel-section">
-        <h3>Gesuchte Fachbereiche</h3>
-        ${c['Gesuchte Fachbereiche und Studiengänge'] ? `<div class="panel-multi-badges">${buildMultiValueBadges(c['Gesuchte Fachbereiche und Studiengänge'], 'panel-multi-badge')}</div>` : ''}
-        ${c['MA'] ? `<div class="panel-row" style="margin-top:8px"><span>👥</span><span>${c['MA']} Mitarbeitende</span></div>` : ''}
-      </div>` : ''}
-
-      <div class="panel-section">
-        <h3>Möglichkeiten</h3>
-        <div class="panel-badges">${buildBadges(c, 'panel-badge')}</div>
+    <div class="panel-section">
+      <h3>Möglichkeiten</h3>
+      <div class="panel-badges">
+        ${c["Praktika ECRI"] === "X" ? `<span class="panel-badge active">Praktika</span>` : ""}
+        ${c["BA-/MA-Thesis"] === "X" ? `<span class="panel-badge active">Thesis</span>` : ""}
+        ${c["Duales Studium"] === "X" ? `<span class="panel-badge active">Duales Studium</span>` : ""}
+        ${c["Auslandseinsatz"] === "X" ? `<span class="panel-badge active">Auslandseinsatz</span>` : ""}
+        ${c["Messe DEG"] === "X" ? `<span class="panel-badge active">Messe DEG</span>` : ""}
+        ${c["Messe ECRI"] === "X" ? `<span class="panel-badge active">Messe ECRI</span>` : ""}
       </div>
+    </div>
 
-      ${c['Kontakt / eigene Suche'] ? `
-      <div class="panel-section">
-        <h3>Notizen</h3>
-        <div class="panel-row"><span>📝</span><span>${c['Kontakt / eigene Suche']}</span></div>
-      </div>` : ''}
-    `;
-  }
+    ${c["MA"] ? `
+    <div class="panel-section">
+      <h3>Mitarbeitende</h3>
+      <div class="panel-row">👥 ${c["MA"]}</div>
+    </div>` : ""}
 
-  // ── Detail-Panel öffnen/schließen ──
-  window.openDetailPanel = function(index) {
-    const c = allData[index];
-    document.getElementById('panel-content').innerHTML = buildPanel(c);
-    document.getElementById('detail-panel').classList.add('open');
-    document.getElementById('detail-overlay').classList.add('open');
-  };
+    ${c["Kontakt / eigene Suche"] ? `
+    <div class="panel-section">
+      <h3>Notizen</h3>
+      <div class="panel-row">📝 ${c["Kontakt / eigene Suche"]}</div>
+    </div>` : ""}
 
-  function closeDetailPanel() {
-    document.getElementById('detail-panel').classList.remove('open');
-    document.getElementById('detail-overlay').classList.remove('open');
-  }
+  `;
 
-  document.getElementById('panel-close').addEventListener('click', closeDetailPanel);
-  document.getElementById('detail-overlay').addEventListener('click', closeDetailPanel);
+  document.getElementById("detail-panel").classList.add("open");
+  document.getElementById("detail-overlay").classList.add("open");
+}
+``
 
-  // ── Volltextsuche: alle Felder prüfen ──
-  function matchesSearch(c, query) {
-    if (!query) return true;
-    const q = query.toLowerCase();
-    return Object.values(c).some(val => val && String(val).toLowerCase().includes(q));
-  }
+/* LIST */
+function renderList(data) {
+  const el = document.getElementById("list");
 
-  // ── Generische Mehrfachauswahl-Filter (Möglichkeiten & Fachbereiche) ──
-  // Erzeugt einen unabhängigen Filter-Zustand mit UND/ODER-Logik und
-  // verdrahtet Dropdown, Checkboxen und Toggle-Buttons automatisch.
-  function createMultiFilter(config) {
-    const state = {
-      mode: config.fixedMode || 'or',   // 'or' oder 'and' (oder fest, falls kein Toggle)
-      selected: new Set(),
-    };
+  el.innerHTML = data.map(c => `
+    <div class="list-item"
+      onclick="focusCompany(${c.index})"
+      onmouseenter="highlightMarker(${c.index})"
+      onmouseleave="resetMarkerHighlight()">
+      
+      <div class="list-name">${c["Unternehmen"]}</div>
+      <div class="list-meta">${c["Adresse"] ?? ""}</div>
 
-    function matches(c) {
-      if (state.selected.size === 0) return true;
-      const values = [...state.selected];
-      if (state.mode === 'and') {
-        return values.every(v => config.hasValue(c, v));
-      }
-      return values.some(v => config.hasValue(c, v));
-    }
+    </div>
+  `).join("");
+}
 
-    function updateButtonLabel() {
-      const btn = document.getElementById(config.btnId);
-      const count = state.selected.size;
-      btn.textContent = count > 0 ? `${config.label} (${count}) ▾` : `${config.label} ▾`;
-      btn.classList.toggle('has-selection', count > 0);
-    }
+/* HIGHLIGHT */
+function highlightMarker(i){
+  activeMarkers.forEach(m=>{
+    m.setOpacity(m._i===i?1:0.3);
+    m.setZIndexOffset(m._i===i?1000:0);
+  });
+}
+function resetMarkerHighlight(){
+  activeMarkers.forEach(m=>m.setOpacity(1));
+}
 
-    function populateOptions(options) {
-      const container = document.getElementById(config.optionsId);
-      container.innerHTML = options.map(opt => `
-        <label class="badge-filter-option">
-          <input type="checkbox" value="${opt.value.replace(/"/g, '&quot;')}">
-          <span>${opt.label}</span>
-        </label>
-      `).join('');
+/* FOCUS */
+window.focusCompany = function(i){
+  document.querySelectorAll('.list-item').forEach(e=>e.classList.remove('active'));
+  const el = document.querySelectorAll('.list-item')[i];
+  if(el) el.classList.add('active');
 
-      container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-        cb.addEventListener('change', () => {
-          if (cb.checked) {
-            state.selected.add(cb.value);
-          } else {
-            state.selected.delete(cb.value);
-          }
-          updateButtonLabel();
-          renderMarkers();
-        });
-      });
+  const c = allData[i];
+  const lat = parseFloat(c.latitude);
+  const lng = parseFloat(c.longitude);
 
-      // Falls ein Suchfeld konfiguriert ist: aktuellen Suchtext erneut anwenden,
-      // damit die Liste nach Neuaufbau (z.B. neue Daten) weiter gefiltert bleibt.
-      if (config.searchInputId) {
-        filterOptionsBySearch(document.getElementById(config.searchInputId).value);
-      }
-    }
+  if(!isNaN(lat)) map.setView([lat,lng],13);
 
-    function filterOptionsBySearch(query) {
-      const container = document.getElementById(config.optionsId);
-      const q = query.trim().toLowerCase();
-      let anyVisible = false;
+  openDetailPanel(i);
+};
 
-      container.querySelectorAll('.badge-filter-option').forEach(label => {
-        const text = label.textContent.trim().toLowerCase();
-        const visible = !q || text.includes(q);
-        label.classList.toggle('is-hidden', !visible);
-        if (visible) anyVisible = true;
-      });
+/* RENDER */
+function render(){
 
-      // "Keine Treffer"-Hinweis verwalten
-      let emptyMsg = container.querySelector('.multi-filter-empty');
-      if (!anyVisible) {
-        if (!emptyMsg) {
-          emptyMsg = document.createElement('div');
-          emptyMsg.className = 'multi-filter-empty';
-          emptyMsg.textContent = 'Keine Treffer';
-          container.appendChild(emptyMsg);
-        }
-      } else if (emptyMsg) {
-        emptyMsg.remove();
-      }
-    }
+  const q = document.getElementById("search-input").value;
 
-    function reset() {
-      state.selected.clear();
-      state.mode = config.fixedMode || 'or';
-      document.querySelectorAll(`#${config.optionsId} input[type="checkbox"]`).forEach(cb => cb.checked = false);
-      if (config.modeOrId) {
-        document.getElementById(config.modeOrId).classList.add('active');
-        document.getElementById(config.modeAndId).classList.remove('active');
-      }
-      if (config.searchInputId) {
-        document.getElementById(config.searchInputId).value = '';
-        filterOptionsBySearch('');
-      }
-      updateButtonLabel();
-    }
+  activeMarkers.forEach(m=>map.removeLayer(m));
+  activeMarkers=[];
 
-    // Dropdown öffnen/schließen (alle anderen werden dabei automatisch geschlossen)
-    document.getElementById(config.btnId).addEventListener('click', (e) => {
-      e.stopPropagation();
-      const dropdown = document.getElementById(config.dropdownId);
-      const willOpen = !dropdown.classList.contains('open');
-      document.querySelectorAll('.multi-filter-dropdown.open').forEach(d => d.classList.remove('open'));
-      if (willOpen) dropdown.classList.add('open');
-    });
+  const filtered=[];
 
-    // UND/ODER Toggle (nur falls konfiguriert)
-    if (config.modeOrId && config.modeAndId) {
-      document.getElementById(config.modeOrId).addEventListener('click', () => {
-        state.mode = 'or';
-        document.getElementById(config.modeOrId).classList.add('active');
-        document.getElementById(config.modeAndId).classList.remove('active');
-        renderMarkers();
-      });
-      document.getElementById(config.modeAndId).addEventListener('click', () => {
-        state.mode = 'and';
-        document.getElementById(config.modeAndId).classList.add('active');
-        document.getElementById(config.modeOrId).classList.remove('active');
-        renderMarkers();
-      });
-    }
+  allData.forEach((c,i)=>{
+    if(!matchesSearch(c,q)) return;
 
-    // Suchfeld im Dropdown (nur falls konfiguriert)
-    if (config.searchInputId) {
-      document.getElementById(config.searchInputId).addEventListener('input', (e) => {
-        filterOptionsBySearch(e.target.value);
-      });
-      // Klick ins Suchfeld soll das Dropdown nicht schließen
-      document.getElementById(config.searchInputId).addEventListener('click', (e) => {
-        e.stopPropagation();
-      });
-    }
+    const lat=parseFloat(c.latitude);
+    const lng=parseFloat(c.longitude);
+    if(isNaN(lat)) return;
 
-    return { matches, populateOptions, reset, dropdownId: config.dropdownId };
-  }
+    filtered.push({...c,index:i});
 
-  // ── Möglichkeiten-Filter (Messe/Praktika/Thesis/etc., feste Liste) ──
-  const moeglichkeitenFilter = createMultiFilter({
-    btnId: 'badge-filter-btn',
-    dropdownId: 'badge-filter-dropdown',
-    optionsId: 'badge-filter-options',
-    modeOrId: 'badge-mode-or',
-    modeAndId: 'badge-mode-and',
-    label: 'Möglichkeiten',
-    hasValue: (c, key) => isMarked(c[key]),
+    const marker=L.marker([lat,lng])
+      .addTo(map)
+      .bindPopup(buildPopup(c,i));
+
+    marker._i=i;
+    activeMarkers.push(marker);
   });
 
-  // ── Fachbereiche-Filter (dynamische Liste aus ";"-getrennten Werten) ──
-  const fachbereichFilter = createMultiFilter({
-    btnId: 'fachbereich-filter-btn',
-    dropdownId: 'fachbereich-filter-dropdown',
-    optionsId: 'fachbereich-filter-options',
-    modeOrId: 'fachbereich-mode-or',
-    modeAndId: 'fachbereich-mode-and',
-    label: 'Fachbereiche',
-    hasValue: (c, value) => splitMultiValue(c['Gesuchte Fachbereiche und Studiengänge']).includes(value),
-  });
+  renderList(filtered);
+  document.getElementById("result-count").innerText=filtered.length+" Unternehmen";
+}
 
-  // ── Standort-Filter (dynamische Liste aus ";"-getrennten Werten, mit Suche, fest ODER) ──
-  const standortFilter = createMultiFilter({
-    btnId: 'standort-filter-btn',
-    dropdownId: 'standort-filter-dropdown',
-    optionsId: 'standort-filter-options',
-    searchInputId: 'standort-search-input',
-    fixedMode: 'or',
-    label: 'Standorte',
-    hasValue: (c, value) => splitMultiValue(c['Standorte']).includes(value),
-  });
+/* EVENTS */
+document.getElementById("search-input").addEventListener("input", render);
+document.getElementById("reset-btn").onclick=()=>{
+  document.getElementById("search-input").value="";
+  render();
+};
 
-  // ── Branchen-Filter (dynamische Liste aus "/"-getrennten Werten, mit Suche, fest ODER) ──
-  const brancheFilter = createMultiFilter({
-    btnId: 'branche-filter-btn',
-    dropdownId: 'branche-filter-dropdown',
-    optionsId: 'branche-filter-options',
-    searchInputId: 'branche-search-input',
-    fixedMode: 'or',
-    label: 'Branchen',
-    hasValue: (c, value) => splitBranche(c['Branche']).includes(value),
-  });
+/* LOAD */
+async function load(){
+  const {data}=await db.from("Unternehmen_neu").select("*");
+  allData=data;
+  render();
+}
+load();
 
-  // Dropdowns schließen, wenn außerhalb geklickt wird
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.badge-filter-wrap')) {
-      document.querySelectorAll('.multi-filter-dropdown.open').forEach(d => d.classList.remove('open'));
-    }
-  });
-
-  // ── Marker rendern ──
-  function renderMarkers() {
-    const query = document.getElementById('search-input').value.trim();
-
-    // Alte Marker entfernen
-    activeMarkers.forEach(m => map.removeLayer(m));
-    activeMarkers = [];
-
-    allData.forEach((c, index) => {
-      if (!matchesSearch(c, query)) return;
-      if (!brancheFilter.matches(c)) return;
-      if (!standortFilter.matches(c)) return;
-      if (!moeglichkeitenFilter.matches(c)) return;
-      if (!fachbereichFilter.matches(c)) return;
-
-      const lat = parseFloat(c.latitude);
-      const lng = parseFloat(c.longitude);
-      if (isNaN(lat) || isNaN(lng)) return;
-      if (lat === PLACEHOLDER_LAT && lng === PLACEHOLDER_LNG) return;
-
-      const marker = L.marker([lat, lng])
-        .addTo(map)
-        .bindPopup(buildPopup(c, index), { maxWidth: 300 });
-      activeMarkers.push(marker);
-    });
-
-    document.getElementById('result-count').textContent =
-      `${activeMarkers.length} Unternehmen`;
-  }
-
-  // ── Dropdowns befüllen ──
-  function populateDropdowns(data) {
-    // Branchen: Werte aus "/"-getrennten Strings aufsplitten und deduplizieren
-    const branchenSet = new Set();
-    data.forEach(c => splitBranche(c['Branche']).forEach(b => branchenSet.add(b)));
-    const branchen = [...branchenSet].sort();
-
-    // Standorte: Werte aus ";"-getrennten Strings aufsplitten und deduplizieren
-    const standorteSet = new Set();
-    data.forEach(c => splitMultiValue(c['Standorte']).forEach(s => standorteSet.add(s)));
-    const standorte = [...standorteSet].sort();
-
-    // Fachbereiche: ebenso aus ";"-getrennten Strings aufsplitten
-    const fachbereicheSet = new Set();
-    data.forEach(c => splitMultiValue(c['Gesuchte Fachbereiche und Studiengänge']).forEach(f => fachbereicheSet.add(f)));
-    const fachbereiche = [...fachbereicheSet].sort();
-
-    brancheFilter.populateOptions(branchen.map(b => ({ value: b, label: b })));
-    standortFilter.populateOptions(standorte.map(s => ({ value: s, label: s })));
-    moeglichkeitenFilter.populateOptions(BADGE_FIELDS.map(f => ({ value: f.key, label: f.label })));
-    fachbereichFilter.populateOptions(fachbereiche.map(f => ({ value: f, label: f })));
-  }
-
-  // ── Daten laden ──
-  async function loadCompanies() {
-    const { data, error } = await db.from('Unternehmen_neu').select('*');
-
-    if (error) {
-      console.error("Supabase Fehler:", error.message);
-      alert("Fehler beim Laden: " + error.message);
-      return;
-    }
-
-    allData = data;
-    populateDropdowns(data);
-    renderMarkers();
-  }
-
-  // ── Event Listener ──
-  document.getElementById('search-input').addEventListener('input', renderMarkers);
-
-  // ── Such-Lupe: Eingabefeld ein-/ausklappen ──
-  const searchInput = document.getElementById('search-input');
-  const searchToggleBtn = document.getElementById('search-toggle-btn');
-
-  function openSearch() {
-    searchInput.classList.add('open');
-    searchToggleBtn.classList.add('active');
-    searchInput.focus();
-  }
-
-  function closeSearch() {
-    searchInput.classList.remove('open');
-    searchToggleBtn.classList.remove('active');
-  }
-
-  searchToggleBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (searchInput.classList.contains('open')) {
-      // Bereits offen: bei leerem Feld schließen, sonst nur fokussieren
-      if (!searchInput.value.trim()) {
-        closeSearch();
-      } else {
-        searchInput.focus();
-      }
-    } else {
-      openSearch();
-    }
-  });
-
-  searchInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      searchInput.value = '';
-      renderMarkers();
-      closeSearch();
-    }
-  });
-
-  // Außerhalb klicken: Suchfeld nur schließen, wenn es leer ist
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.search-wrap') && !searchInput.value.trim()) {
-      closeSearch();
-    }
-  });
-
-  document.getElementById('reset-btn').addEventListener('click', () => {
-    document.getElementById('search-input').value = '';
-    closeSearch();
-    brancheFilter.reset();
-    standortFilter.reset();
-    moeglichkeitenFilter.reset();
-    fachbereichFilter.reset();
-    renderMarkers();
-  });
-
-  loadCompanies();
 </script>
+
 </body>
 </html>
