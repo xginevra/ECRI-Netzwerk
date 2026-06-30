@@ -2184,7 +2184,8 @@
       // Marker sofort mit Buchstaben-Platzhalter anzeigen (kein Warten auf Netzwerk),
       // danach im Hintergrund auf das beste verfügbare Favicon umschalten.
       const isInteresting = isMarked(c['Kontakt / eigene Suche']);
-      const markerSize = isInteresting ? 38 : 30;
+      const hasAnyBadge = BADGE_FIELDS.some(f => isMarked(c[f.key]));
+      const markerSize = hasAnyBadge ? 38 : 30;
       const markerClass = 'company-logo-marker' + (isInteresting ? ' marker-interesting' : '');
 
       const placeholderIcon = L.icon({
