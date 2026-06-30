@@ -898,6 +898,131 @@
       opacity: 1;
       pointer-events: auto;
     }
+
+    /* ── Admin-Login-Modal ── */
+    #admin-login-btn {
+      flex-shrink: 0;
+    }
+    #admin-login-btn.is-admin {
+      background: var(--accent);
+    }
+
+    #admin-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(22, 34, 61, 0.4);
+      z-index: 2999;
+      display: none;
+    }
+    #admin-overlay.open { display: block; }
+
+    #admin-modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 320px;
+      max-width: calc(100vw - 32px);
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-float);
+      z-index: 3000;
+      padding: 24px 20px 20px;
+      display: none;
+    }
+    #admin-modal.open { display: block; }
+    #admin-modal h2 {
+      font-size: 1.05rem;
+      margin-bottom: 14px;
+      color: var(--navy);
+    }
+    #admin-login-form input {
+      width: 100%;
+      padding: 9px 11px;
+      margin-bottom: 8px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 0.88rem;
+      font-family: inherit;
+    }
+
+    /* ── Notiz-Status-Badge (ausstehend / freigegeben) ── */
+    .note-pending-badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 1px 7px;
+      border-radius: 10px;
+      background: #fff6db;
+      color: #8a6d00;
+      white-space: nowrap;
+    }
+    .note-approve-btn {
+      color: #1f7a45 !important;
+      font-weight: 700;
+    }
+
+    /* ── Admin: Eintrag bearbeiten ── */
+    #panel-admin-edit-btn {
+      position: absolute;
+      top: 14px;
+      right: 52px;
+      width: 30px;
+      height: 30px;
+      border: none;
+      background: var(--surface-subtle);
+      border-radius: 50%;
+      font-size: 0.95rem;
+      color: var(--text);
+      cursor: pointer;
+    }
+    #panel-admin-edit-btn:hover { background: var(--border); }
+
+    .edit-field-row {
+      margin-bottom: 10px;
+    }
+    .edit-field-row label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+    .edit-field-row input[type="text"],
+    .edit-field-row textarea {
+      width: 100%;
+      padding: 7px 9px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 0.86rem;
+      font-family: inherit;
+    }
+    .edit-field-row textarea { min-height: 50px; resize: vertical; }
+    .edit-checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.86rem;
+      margin-bottom: 6px;
+    }
+    .edit-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    .edit-actions button {
+      flex: 1;
+      padding: 9px 0;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .edit-save-btn { background: var(--navy); color: #fff; }
+    .edit-cancel-btn { background: var(--surface-subtle); color: var(--text); }
+    .edit-delete-btn { background: #a33; color: #fff; flex: none; padding: 9px 14px; }
   </style>
 </head>
 <body>
@@ -912,7 +1037,24 @@
     <button id="lang-de-btn" class="active" data-lang="de">DE</button>
     <button id="lang-en-btn" data-lang="en">EN</button>
   </div>
+  <button id="admin-login-btn" class="multi-filter-btn" title="Admin-Login">🔒 Admin</button>
   <span id="result-count"></span>
+</div>
+
+<div id="admin-overlay"></div>
+<div id="admin-modal">
+  <button class="panel-close" id="admin-modal-close">✕</button>
+  <h2>Admin-Login</h2>
+  <div id="admin-login-form">
+    <input type="email" id="admin-email" placeholder="E-Mail" autocomplete="username">
+    <input type="password" id="admin-password" placeholder="Passwort" autocomplete="current-password">
+    <button id="admin-login-submit" class="note-add-btn">Einloggen</button>
+    <div class="note-status" id="admin-login-status"></div>
+  </div>
+  <div id="admin-logged-in" style="display:none">
+    <p style="margin-bottom:12px;font-size:0.88rem;">Eingeloggt als Admin.</p>
+    <button id="admin-logout-btn" class="note-add-btn">Ausloggen</button>
+  </div>
 </div>
 
 <div id="app-body">
@@ -1013,6 +1155,7 @@
 <div id="detail-overlay"></div>
 <div id="detail-panel">
   <button class="panel-close" id="panel-close">✕</button>
+  <button class="panel-close" id="panel-admin-edit-btn" title="Bearbeiten" style="display:none">✏️</button>
   <div id="panel-content"></div>
 </div>
 
@@ -1036,6 +1179,41 @@
 
   const { createClient } = window.supabase;
   const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // ──────────────────────────────────────────
+  //  🔐 Auth-Status: anonyme Besucher + Admin-Login
+  //  Jeder Besucher bekommt automatisch eine stabile, anonyme
+  //  Identität (nötig, damit "eigene Notizen" erkannt werden).
+  //  Admins loggen sich zusätzlich per E-Mail/Passwort ein.
+  // ──────────────────────────────────────────
+  let currentUserId = null;
+  let isAdmin = false;
+
+  async function ensureAuthSession() {
+    const { data: { session } } = await db.auth.getSession();
+    if (!session) {
+      const { data, error } = await db.auth.signInAnonymously();
+      if (error) {
+        console.error('Anonyme Anmeldung fehlgeschlagen:', error.message);
+        return;
+      }
+      currentUserId = data.user?.id ?? null;
+    } else {
+      currentUserId = session.user.id;
+    }
+    await refreshAdminStatus();
+  }
+
+  async function refreshAdminStatus() {
+    const { data, error } = await db.rpc('is_admin');
+    isAdmin = !error && data === true;
+    updateAdminUi();
+  }
+
+  db.auth.onAuthStateChange((_event, session) => {
+    currentUserId = session?.user?.id ?? null;
+    refreshAdminStatus();
+  });
 
   // ──────────────────────────────────────────
   //  🌐 Sprach-System (DE/EN) — übersetzt nur feste Oberflächentexte.
@@ -1086,6 +1264,8 @@
       notizSpeichert: 'Wird gespeichert…',
       notizFehler: 'Fehler beim Speichern. Bitte erneut versuchen.',
       notizLoeschenBestaetigung: 'Diese Notiz wirklich löschen?',
+      notizAusstehend: 'Ausstehend',
+      notizFreigeben: 'Freigeben',
       panelAktivitaetenNote: 'Womit das Unternehmen in der Vergangenheit bereits dabei war – keine Aussage über aktuell laufende Angebote.',
     },
     en: {
@@ -1131,6 +1311,8 @@
       notizSpeichert: 'Saving…',
       notizFehler: 'Error saving. Please try again.',
       notizLoeschenBestaetigung: 'Really delete this note?',
+      notizAusstehend: 'Pending',
+      notizFreigeben: 'Approve',
       panelAktivitaetenNote: 'What the company has already taken part in previously – not an indication of currently active offers.',
     },
   };
@@ -1435,7 +1617,122 @@
   }
 
   // ──────────────────────────────────────────
-  //  📝 Notizen-Funktion (Supabase-Tabelle "notizen")
+  //  ✏️ Admin-Bearbeitungsmodus für Unternehmenseinträge
+  // ──────────────────────────────────────────
+  const EDITABLE_TEXT_FIELDS = [
+    { key: 'Unternehmen', label: 'Unternehmen' },
+    { key: 'Branche', label: 'Branche (mit "/" trennen)' },
+    { key: 'Adresse', label: 'Adresse' },
+    { key: 'Standorte', label: 'Standorte (mit ";" trennen)' },
+    { key: 'Telefon', label: 'Telefon' },
+    { key: 'EMail', label: 'E-Mail' },
+    { key: 'Webseite', label: 'Webseite' },
+    { key: 'Kontaktperson', label: 'Kontaktperson' },
+    { key: 'MA', label: 'Mitarbeitende' },
+    { key: 'Gesuchte Fachbereiche und Studiengänge', label: 'Gesuchte Fachbereiche (mit ";" trennen)' },
+  ];
+
+  let currentDetailIndex = null;
+
+  function buildEditForm(c) {
+    const textFields = EDITABLE_TEXT_FIELDS.map(f => `
+      <div class="edit-field-row">
+        <label>${f.label}</label>
+        <input type="text" data-edit-key="${f.key}" value="${escapeHtml(c[f.key] ?? '')}">
+      </div>
+    `).join('');
+
+    const badgeCheckboxes = BADGE_FIELDS.map(f => `
+      <label class="edit-checkbox-row">
+        <input type="checkbox" data-edit-badge-key="${f.key.replace(/"/g, '&quot;')}" ${isMarked(c[f.key]) ? 'checked' : ''}>
+        <span>${f.label}</span>
+      </label>
+    `).join('');
+
+    const interestingChecked = isMarked(c['Kontakt / eigene Suche']) ? 'checked' : '';
+
+    return `
+      <div class="panel-name">Eintrag bearbeiten</div>
+      ${textFields}
+      <div class="panel-section">
+        <h3>Bisherige Aktivitäten</h3>
+        ${badgeCheckboxes}
+      </div>
+      <div class="panel-section">
+        <label class="edit-checkbox-row">
+          <input type="checkbox" id="edit-interesting" ${interestingChecked}>
+          <span>Potentiell interessant (Kontakt / eigene Suche)</span>
+        </label>
+      </div>
+      <div class="edit-actions">
+        <button class="edit-cancel-btn" id="edit-cancel-btn">Abbrechen</button>
+        <button class="edit-save-btn" id="edit-save-btn">Speichern</button>
+      </div>
+      <div class="edit-actions">
+        <button class="edit-delete-btn" id="edit-delete-btn">Eintrag löschen</button>
+      </div>
+      <div class="note-status" id="edit-status"></div>
+    `;
+  }
+
+  function enterEditMode(index) {
+    const c = allData[index];
+    document.getElementById('panel-content').innerHTML = buildEditForm(c);
+
+    document.getElementById('edit-cancel-btn').addEventListener('click', () => {
+      document.getElementById('panel-content').innerHTML = buildPanel(c);
+      wireNotesSection(c);
+    });
+
+    document.getElementById('edit-save-btn').addEventListener('click', () => saveCompanyEdit(index));
+    document.getElementById('edit-delete-btn').addEventListener('click', () => deleteCompany(index));
+  }
+
+  async function saveCompanyEdit(index) {
+    const c = allData[index];
+    const statusEl = document.getElementById('edit-status');
+    statusEl.classList.remove('error');
+    statusEl.textContent = 'Wird gespeichert…';
+
+    const update = {};
+    document.querySelectorAll('[data-edit-key]').forEach(input => {
+      update[input.dataset.editKey] = input.value;
+    });
+    document.querySelectorAll('[data-edit-badge-key]').forEach(cb => {
+      update[cb.dataset.editBadgeKey] = cb.checked ? 'X' : '';
+    });
+    update['Kontakt / eigene Suche'] = document.getElementById('edit-interesting').checked ? 'X' : '';
+
+    const { error } = await db.from('Unternehmen_neu').update(update).eq('id', c.id);
+    if (error) {
+      console.error('Fehler beim Speichern:', error.message);
+      statusEl.textContent = 'Fehler beim Speichern: ' + error.message;
+      statusEl.classList.add('error');
+      return;
+    }
+
+    await loadCompanies();
+    const newIndex = allData.findIndex(x => x.id === c.id);
+    if (newIndex >= 0) openDetailPanel(newIndex);
+  }
+
+  async function deleteCompany(index) {
+    const c = allData[index];
+    if (!confirm(`"${c['Unternehmen']}" wirklich endgültig löschen?`)) return;
+
+    const { error } = await db.from('Unternehmen_neu').delete().eq('id', c.id);
+    if (error) {
+      console.error('Fehler beim Löschen:', error.message);
+      document.getElementById('edit-status').textContent = 'Fehler beim Löschen: ' + error.message;
+      document.getElementById('edit-status').classList.add('error');
+      return;
+    }
+
+    closeDetailPanel();
+    await loadCompanies();
+  }
+
+
   //  Spalten: id, unternehmen_id (FK auf Unternehmen_neu.id), text, created_at, updated_at
   // ──────────────────────────────────────────
   function formatNoteDate(iso) {
@@ -1477,18 +1774,33 @@
       return;
     }
 
-    list.innerHTML = notes.map(n => `
+    list.innerHTML = notes.map(n => {
+      const isOwn = n.created_by === currentUserId;
+      const canEditOrDelete = (isOwn && !n.approved) || isAdmin;
+      const statusBadge = !n.approved
+        ? `<span class="note-pending-badge">${t('notizAusstehend')}</span>`
+        : '';
+      const approveBtn = (isAdmin && !n.approved)
+        ? `<button class="note-approve-btn" data-note-id="${n.id}">${t('notizFreigeben')}</button>`
+        : '';
+      return `
       <div class="note-item" data-note-id="${n.id}">
         <div class="note-item-text" data-note-text>${escapeHtml(n.text)}</div>
         <div class="note-item-meta">
-          <span class="note-item-date">${formatNoteDate(n.created_at)}</span>
+          <span class="note-item-date">${formatNoteDate(n.created_at)} ${statusBadge}</span>
           <span class="note-item-actions">
-            <button class="note-edit-btn" data-note-id="${n.id}">${t('notizBearbeiten')}</button>
-            <button class="note-delete-btn" data-note-id="${n.id}">${t('notizLoeschen')}</button>
+            ${approveBtn}
+            ${canEditOrDelete ? `<button class="note-edit-btn" data-note-id="${n.id}">${t('notizBearbeiten')}</button>` : ''}
+            ${canEditOrDelete ? `<button class="note-delete-btn" data-note-id="${n.id}">${t('notizLoeschen')}</button>` : ''}
           </span>
         </div>
       </div>
-    `).join('');
+    `;
+    }).join('');
+
+    list.querySelectorAll('.note-approve-btn').forEach(btn => {
+      btn.addEventListener('click', () => approveNote(btn.dataset.noteId));
+    });
 
     list.querySelectorAll('.note-edit-btn').forEach(btn => {
       btn.addEventListener('click', () => startEditNote(btn.dataset.noteId));
@@ -1579,6 +1891,17 @@
     await refreshNotes(unternehmenId);
   }
 
+  async function approveNote(noteId) {
+    const { error } = await db.from('notizen').update({ approved: true }).eq('id', noteId);
+    if (error) {
+      console.error('Fehler beim Freigeben der Notiz:', error.message);
+      setNoteStatus(t('notizFehler'), true);
+      return;
+    }
+    const unternehmenId = document.getElementById('notes-container').dataset.unternehmenId;
+    await refreshNotes(unternehmenId);
+  }
+
   async function deleteNote(noteId) {
     if (!confirm(t('notizLoeschenBestaetigung'))) return;
 
@@ -1594,25 +1917,37 @@
     await refreshNotes(unternehmenId);
   }
 
-  // ── Detail-Panel öffnen/schließen ──
-  window.openDetailPanel = function(index) {
-    const c = allData[index];
-    document.getElementById('panel-content').innerHTML = buildPanel(c);
-    document.getElementById('detail-panel').classList.add('open');
-    document.getElementById('detail-overlay').classList.add('open');
-
-    // Notizen für dieses Unternehmen laden und den "Hinzufügen"-Button verdrahten
+  function wireNotesSection(c) {
     const unternehmenId = c.id;
     refreshNotes(unternehmenId);
     document.getElementById('note-add-btn').addEventListener('click', () => addNote(unternehmenId));
     document.getElementById('note-new-text').addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) addNote(unternehmenId);
     });
+  }
+
+  // ── Detail-Panel öffnen/schließen ──
+  window.openDetailPanel = function(index) {
+    currentDetailIndex = index;
+    const c = allData[index];
+    document.getElementById('panel-content').innerHTML = buildPanel(c);
+    document.getElementById('detail-panel').classList.add('open');
+    document.getElementById('detail-overlay').classList.add('open');
+
+    const editBtn = document.getElementById('panel-admin-edit-btn');
+    editBtn.style.display = isAdmin ? 'flex' : 'none';
+
+    wireNotesSection(c);
   };
+
+  document.getElementById('panel-admin-edit-btn').addEventListener('click', () => {
+    if (currentDetailIndex !== null) enterEditMode(currentDetailIndex);
+  });
 
   function closeDetailPanel() {
     document.getElementById('detail-panel').classList.remove('open');
     document.getElementById('detail-overlay').classList.remove('open');
+    currentDetailIndex = null;
   }
 
   document.getElementById('panel-close').addEventListener('click', closeDetailPanel);
@@ -2105,6 +2440,63 @@
   // Initiale Position setzen (Sidebar startet offen)
   setSidebarOpen(true);
 
+  // ── Admin-Login-Modal ──
+  const adminModal = document.getElementById('admin-modal');
+  const adminOverlay = document.getElementById('admin-overlay');
+  const adminLoginBtn = document.getElementById('admin-login-btn');
+
+  function openAdminModal() {
+    adminModal.classList.add('open');
+    adminOverlay.classList.add('open');
+  }
+  function closeAdminModal() {
+    adminModal.classList.remove('open');
+    adminOverlay.classList.remove('open');
+    document.getElementById('admin-login-status').textContent = '';
+  }
+
+  function updateAdminUi() {
+    adminLoginBtn.classList.toggle('is-admin', isAdmin);
+    adminLoginBtn.textContent = isAdmin ? '🔓 Admin' : '🔒 Admin';
+    document.getElementById('admin-login-form').style.display = isAdmin ? 'none' : 'block';
+    document.getElementById('admin-logged-in').style.display = isAdmin ? 'block' : 'none';
+    // Offenes Detail-Panel neu rendern, damit Freigeben-Buttons erscheinen/verschwinden
+    const notesContainer = document.getElementById('notes-container');
+    if (notesContainer) refreshNotes(notesContainer.dataset.unternehmenId);
+    document.getElementById('panel-admin-edit-btn').style.display =
+      (isAdmin && currentDetailIndex !== null) ? 'flex' : 'none';
+  }
+
+  adminLoginBtn.addEventListener('click', openAdminModal);
+  document.getElementById('admin-modal-close').addEventListener('click', closeAdminModal);
+  adminOverlay.addEventListener('click', closeAdminModal);
+
+  document.getElementById('admin-login-submit').addEventListener('click', async () => {
+    const email = document.getElementById('admin-email').value.trim();
+    const password = document.getElementById('admin-password').value;
+    const statusEl = document.getElementById('admin-login-status');
+    if (!email || !password) return;
+
+    statusEl.classList.remove('error');
+    statusEl.textContent = 'Wird eingeloggt…';
+
+    const { error } = await db.auth.signInWithPassword({ email, password });
+    if (error) {
+      statusEl.textContent = 'Login fehlgeschlagen: ' + error.message;
+      statusEl.classList.add('error');
+      return;
+    }
+    document.getElementById('admin-password').value = '';
+    closeAdminModal();
+  });
+
+  document.getElementById('admin-logout-btn').addEventListener('click', async () => {
+    await db.auth.signOut();
+    await ensureAuthSession(); // wieder anonym anmelden
+    closeAdminModal();
+  });
+
+  ensureAuthSession();
   loadCompanies();
 </script>
 </body>
