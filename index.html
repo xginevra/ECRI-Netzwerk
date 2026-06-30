@@ -33,26 +33,170 @@
       flex-direction: column;
     }
 
-    /* ── Top Bar ── */
-    #topbar {
+    /* ── Schmale Kopfzeile: Logo + Suche + Ergebniszähler ── */
+    #app-header {
       background: var(--navy);
       color: #fff;
       padding: 12px 18px;
       display: flex;
       align-items: center;
       gap: 10px;
-      flex-wrap: wrap;
       z-index: 1000;
       box-shadow: var(--shadow-soft);
+      flex-shrink: 0;
     }
 
-    #topbar h1 {
+    #app-header h1 {
       font-size: 1.02rem;
       font-weight: 700;
       letter-spacing: 0.01em;
       white-space: nowrap;
       margin-right: auto;
     }
+
+    /* ── Sprach-Toggle (DE/EN) ── */
+    #lang-toggle {
+      display: flex;
+      border: 1px solid #ffffff3a;
+      border-radius: 14px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    #lang-toggle button {
+      border: none;
+      background: transparent;
+      color: #ffffffa0;
+      padding: 6px 12px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    #lang-toggle button.active {
+      background: var(--accent);
+      color: #fff;
+    }
+    #lang-toggle button:not(.active):hover {
+      background: #ffffff14;
+      color: #fff;
+    }
+
+    /* ── Body: linke Filter-Sidebar + Kartenbereich ── */
+    #app-body {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* ── Linke Filter-Sidebar (Step-Design) ── */
+    #filter-sidebar {
+      width: 300px;
+      flex-shrink: 0;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      padding: 26px 24px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 26px;
+    }
+
+    .filter-step-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .filter-step-title {
+      font-family: 'Georgia', 'Times New Roman', serif;
+      font-size: 1.32rem;
+      font-weight: 400;
+      color: var(--text);
+      margin-bottom: 16px;
+      line-height: 1.25;
+    }
+
+    .filter-step-subtitle {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: -10px;
+      margin-bottom: 16px;
+      line-height: 1.4;
+    }
+
+    .filter-step-wrap {
+      margin-bottom: 10px;
+    }
+    .filter-step-wrap:last-child { margin-bottom: 0; }
+
+    .step-filter-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      text-align: left;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .step-filter-btn:hover { border-color: var(--text-muted); }
+    .step-filter-btn.has-selection {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+    }
+
+    .step-filter-icon {
+      width: 34px;
+      height: 34px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      background: var(--surface-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+    }
+
+    .step-filter-label {
+      flex: 1;
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--text);
+      white-space: normal;
+    }
+
+    .step-filter-chevron {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      flex-shrink: 0;
+    }
+
+    .filter-sidebar-footer {
+      margin-top: auto;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    #reset-btn {
+      width: 100%;
+      padding: 11px 14px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    #reset-btn:hover { background: var(--surface-subtle); border-color: var(--text-muted); }
 
     .search-wrap {
       display: flex;
@@ -101,27 +245,13 @@
     #search-input::placeholder { color: #ffffffa0; }
     #search-input:focus { background: #ffffff24; }
 
-    #reset-btn {
-      padding: 8px 14px;
-      border-radius: var(--radius-sm);
-      border: 1px solid #ffffff3a;
-      background: transparent;
-      color: #fff;
-      font-size: 0.85rem;
-      font-weight: 500;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: background 0.2s;
-    }
-    #reset-btn:hover { background: #ffffff14; }
-
     #result-count {
       font-size: 0.8rem;
       color: #ffffffa0;
       white-space: nowrap;
     }
 
-    /* ── Badge-Filter Dropdown (Möglichkeiten & Fachbereiche) ── */
+    /* ── Badge-Filter Dropdown (Bisherige Aktivitäten & Fachbereiche) ── */
     .badge-filter-wrap {
       position: relative;
     }
@@ -191,6 +321,16 @@
     .badge-filter-toggle-btn button.active {
       background: var(--navy);
       color: #fff;
+    }
+
+    .multi-filter-dropdown-note {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      background: var(--surface-subtle);
+      border-radius: var(--radius-sm);
+      padding: 7px 9px;
+      margin-bottom: 10px;
+      line-height: 1.4;
     }
 
     .badge-filter-option {
@@ -325,6 +465,15 @@
       margin-top: 1px;
     }
 
+    /* ── Hervorgehobenes Logo: "Potentiell interessant" (Kontakt/eigene Suche = X) ──
+       Passend zur Hervorhebung auf der Karte: etwas größer, goldfarbener Rand. ── */
+    .sidebar-item-logo.logo-interesting {
+      width: 36px;
+      height: 36px;
+      border: 2px solid #c98a2c;
+      box-shadow: 0 0 0 2px rgba(201, 138, 44, 0.18);
+    }
+
     .sidebar-item-logo-placeholder {
       width: 30px;
       height: 30px;
@@ -424,6 +573,14 @@
       object-fit: contain;
     }
 
+    /* ── Hervorgehobener Marker: "Potentiell interessant" (Kontakt/eigene Suche = X) ──
+       Etwas größer und mit farbigem Rand, damit dieses subtile Signal auch
+       auf der Karte selbst erkennbar ist, ohne aufdringlich zu wirken. ── */
+    .company-logo-marker.marker-interesting {
+      border: 3px solid #c98a2c;
+      box-shadow: 0 1px 6px rgba(201, 138, 44, 0.55), 0 0 0 2px rgba(201, 138, 44, 0.18);
+    }
+
     /* ── Popup ── */
     .popup-inner {
       min-width: 220px;
@@ -455,6 +612,16 @@
     .popup-inner .popup-row span:first-child { flex-shrink: 0; }
     .popup-inner a { color: var(--accent); text-decoration: none; }
     .popup-inner a:hover { text-decoration: underline; }
+
+    .popup-badges-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-top: 8px;
+      margin-bottom: 4px;
+    }
 
     .popup-badges {
       display: flex;
@@ -551,6 +718,12 @@
       color: var(--text-muted);
       margin-bottom: 8px;
     }
+    .panel-section-note {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin: -4px 0 8px;
+      line-height: 1.4;
+    }
     .panel-row {
       display: flex;
       gap: 8px;
@@ -592,6 +765,126 @@
       font-weight: 600;
     }
 
+    /* ── Notizen-Bereich im Detail-Panel ── */
+    .notes-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .note-item {
+      background: var(--surface-subtle);
+      border-radius: var(--radius-sm);
+      padding: 9px 11px;
+    }
+    .note-item-text {
+      font-size: 0.86rem;
+      color: var(--text);
+      line-height: 1.45;
+      white-space: pre-wrap;
+      margin-bottom: 6px;
+    }
+    .note-item-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .note-item-date {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+    .note-item-actions {
+      display: flex;
+      gap: 4px;
+    }
+    .note-item-actions button {
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 0.74rem;
+      cursor: pointer;
+      padding: 2px 7px;
+      border-radius: 4px;
+      transition: background 0.15s, color 0.15s;
+    }
+    .note-item-actions button:hover {
+      background: var(--border);
+      color: var(--text);
+    }
+    .note-item-actions button.note-delete-btn:hover {
+      color: #a33;
+    }
+    .note-empty {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+    .note-edit-textarea {
+      width: 100%;
+      border: 1px solid var(--border-strong, var(--border));
+      border-radius: var(--radius-sm);
+      padding: 7px 9px;
+      font-size: 0.86rem;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 56px;
+      margin-bottom: 6px;
+    }
+    .note-edit-actions {
+      display: flex;
+      gap: 6px;
+      justify-content: flex-end;
+    }
+    .note-edit-actions button {
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 5px 12px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .note-save-btn {
+      background: var(--navy);
+      color: #fff;
+    }
+    .note-cancel-btn {
+      background: var(--surface-subtle);
+      color: var(--text);
+    }
+    .note-add-form textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 10px;
+      font-size: 0.86rem;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 60px;
+      margin-bottom: 8px;
+    }
+    .note-add-btn {
+      width: 100%;
+      padding: 8px 0;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: var(--navy);
+      color: #fff;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .note-add-btn:hover { opacity: 0.9; }
+    .note-add-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .note-status {
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      margin-top: 6px;
+      min-height: 1em;
+    }
+    .note-status.error { color: #a33; }
+
     #detail-overlay {
       position: fixed;
       inset: 0;
@@ -605,82 +898,264 @@
       opacity: 1;
       pointer-events: auto;
     }
+
+    /* ── Admin-Login-Modal ── */
+    #admin-login-btn {
+      flex-shrink: 0;
+    }
+    #admin-login-btn.is-admin {
+      background: var(--accent);
+    }
+
+    #admin-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(22, 34, 61, 0.4);
+      z-index: 2999;
+      display: none;
+    }
+    #admin-overlay.open { display: block; }
+
+    #admin-modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 320px;
+      max-width: calc(100vw - 32px);
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-float);
+      z-index: 3000;
+      padding: 24px 20px 20px;
+      display: none;
+    }
+    #admin-modal.open { display: block; }
+    #admin-modal h2 {
+      font-size: 1.05rem;
+      margin-bottom: 14px;
+      color: var(--navy);
+    }
+    #admin-login-form input {
+      width: 100%;
+      padding: 9px 11px;
+      margin-bottom: 8px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 0.88rem;
+      font-family: inherit;
+    }
+
+    /* ── Notiz-Status-Badge (ausstehend / freigegeben) ── */
+    .note-pending-badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 1px 7px;
+      border-radius: 10px;
+      background: #fff6db;
+      color: #8a6d00;
+      white-space: nowrap;
+    }
+    .note-approve-btn {
+      color: #1f7a45 !important;
+      font-weight: 700;
+    }
+
+    /* ── Admin: Eintrag bearbeiten ── */
+    #panel-admin-edit-btn {
+      position: absolute;
+      top: 14px;
+      right: 52px;
+      width: 30px;
+      height: 30px;
+      border: none;
+      background: var(--surface-subtle);
+      border-radius: 50%;
+      font-size: 0.95rem;
+      color: var(--text);
+      cursor: pointer;
+    }
+    #panel-admin-edit-btn:hover { background: var(--border); }
+
+    .edit-field-row {
+      margin-bottom: 10px;
+    }
+    .edit-field-row label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+    .edit-field-row input[type="text"],
+    .edit-field-row textarea {
+      width: 100%;
+      padding: 7px 9px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 0.86rem;
+      font-family: inherit;
+    }
+    .edit-field-row textarea { min-height: 50px; resize: vertical; }
+    .edit-checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.86rem;
+      margin-bottom: 6px;
+    }
+    .edit-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    .edit-actions button {
+      flex: 1;
+      padding: 9px 0;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .edit-save-btn { background: var(--navy); color: #fff; }
+    .edit-cancel-btn { background: var(--surface-subtle); color: var(--text); }
+    .edit-delete-btn { background: #a33; color: #fff; flex: none; padding: 9px 14px; }
   </style>
 </head>
 <body>
 
-<div id="topbar">
-  <h1>🏢 Unternehmenskarte</h1>
-
+<div id="app-header">
+  <h1 data-i18n="appTitle">🏢 Unternehmenskarte</h1>
   <div class="search-wrap">
     <button id="search-toggle-btn" title="Suche">🔍</button>
-    <input type="text" id="search-input" placeholder="Suche in allen Feldern…" />
+    <input type="text" id="search-input" data-i18n-placeholder="searchPlaceholder" placeholder="Suche in allen Feldern…" />
   </div>
-
-  <div class="badge-filter-wrap">
-    <button id="branche-filter-btn" class="multi-filter-btn">Branchen ▾</button>
-    <div id="branche-filter-dropdown" class="multi-filter-dropdown">
-      <input type="text" id="branche-search-input" class="multi-filter-search" placeholder="Branche suchen…">
-      <div id="branche-filter-options" class="multi-filter-options-scroll"></div>
-    </div>
+  <div id="lang-toggle">
+    <button id="lang-de-btn" class="active" data-lang="de">DE</button>
+    <button id="lang-en-btn" data-lang="en">EN</button>
   </div>
-
-  <div class="badge-filter-wrap">
-    <button id="standort-filter-btn" class="multi-filter-btn">Standorte ▾</button>
-    <div id="standort-filter-dropdown" class="multi-filter-dropdown">
-      <input type="text" id="standort-search-input" class="multi-filter-search" placeholder="Ort suchen…">
-      <div id="standort-filter-options" class="multi-filter-options-scroll"></div>
-    </div>
-  </div>
-
-  <div class="badge-filter-wrap">
-    <button id="badge-filter-btn" class="multi-filter-btn">Möglichkeiten ▾</button>
-    <div id="badge-filter-dropdown" class="multi-filter-dropdown">
-      <div class="badge-filter-toggle">
-        <span>Kombination</span>
-        <div class="badge-filter-toggle-btn">
-          <button id="badge-mode-or" class="active" data-mode="or">ODER</button>
-          <button id="badge-mode-and" data-mode="and">UND</button>
-        </div>
-      </div>
-      <div id="badge-filter-options"></div>
-    </div>
-  </div>
-
-  <div class="badge-filter-wrap">
-    <button id="fachbereich-filter-btn" class="multi-filter-btn">Fachbereiche ▾</button>
-    <div id="fachbereich-filter-dropdown" class="multi-filter-dropdown">
-      <div class="badge-filter-toggle">
-        <span>Kombination</span>
-        <div class="badge-filter-toggle-btn">
-          <button id="fachbereich-mode-or" class="active" data-mode="or">ODER</button>
-          <button id="fachbereich-mode-and" data-mode="and">UND</button>
-        </div>
-      </div>
-      <div id="fachbereich-filter-options" class="multi-filter-options-scroll"></div>
-    </div>
-  </div>
-
-  <button id="reset-btn">✕ Zurücksetzen</button>
+  <button id="admin-login-btn" class="multi-filter-btn" title="Admin-Login">🔒 Admin</button>
   <span id="result-count"></span>
 </div>
 
-<div id="content-area">
-  <div id="map"></div>
-  <button id="sidebar-toggle-btn" title="Liste ein-/ausblenden">☰</button>
+<div id="admin-overlay"></div>
+<div id="admin-modal">
+  <button class="panel-close" id="admin-modal-close">✕</button>
+  <h2>Admin-Login</h2>
+  <div id="admin-login-form">
+    <input type="email" id="admin-email" placeholder="E-Mail" autocomplete="username">
+    <input type="password" id="admin-password" placeholder="Passwort" autocomplete="current-password">
+    <button id="admin-login-submit" class="note-add-btn">Einloggen</button>
+    <div class="note-status" id="admin-login-status"></div>
+  </div>
+  <div id="admin-logged-in" style="display:none">
+    <p style="margin-bottom:12px;font-size:0.88rem;">Eingeloggt als Admin.</p>
+    <button id="admin-logout-btn" class="note-add-btn">Ausloggen</button>
+  </div>
+</div>
 
-  <div id="sidebar">
-    <div id="sidebar-header">
-      <span>Unternehmen</span>
-      <button id="sidebar-close-btn" title="Liste ausblenden">✕</button>
+<div id="app-body">
+  <aside id="filter-sidebar">
+    <div class="filter-step">
+      <div class="filter-step-label" data-i18n="step01Label">Schritt 01</div>
+      <h2 class="filter-step-title" data-i18n="step01Title">Branche</h2>
+      <div class="badge-filter-wrap filter-step-wrap">
+        <button id="branche-filter-btn" class="multi-filter-btn step-filter-btn">
+          <span class="step-filter-icon">🏷️</span>
+          <span class="step-filter-label" data-i18n="branchePlaceholder">Branche wählen</span>
+          <span class="step-filter-chevron">▾</span>
+        </button>
+        <div id="branche-filter-dropdown" class="multi-filter-dropdown">
+          <input type="text" id="branche-search-input" class="multi-filter-search" data-i18n-placeholder="brancheSearchPlaceholder" placeholder="Branche suchen…">
+          <div id="branche-filter-options" class="multi-filter-options-scroll"></div>
+        </div>
+      </div>
     </div>
-    <div id="sidebar-list"></div>
+
+    <div class="filter-step">
+      <div class="filter-step-label" data-i18n="step02Label">Schritt 02</div>
+      <h2 class="filter-step-title" data-i18n="step02Title">Wo in der Region?</h2>
+      <div class="badge-filter-wrap filter-step-wrap">
+        <button id="standort-filter-btn" class="multi-filter-btn step-filter-btn">
+          <span class="step-filter-icon">📍</span>
+          <span class="step-filter-label" data-i18n="standortPlaceholder">Standort wählen</span>
+          <span class="step-filter-chevron">▾</span>
+        </button>
+        <div id="standort-filter-dropdown" class="multi-filter-dropdown">
+          <input type="text" id="standort-search-input" class="multi-filter-search" data-i18n-placeholder="standortSearchPlaceholder" placeholder="Ort suchen…">
+          <div id="standort-filter-options" class="multi-filter-options-scroll"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="filter-step">
+      <div class="filter-step-label" data-i18n="step03Label">Schritt 03</div>
+      <h2 class="filter-step-title" data-i18n="step03Title">Die Eckdaten</h2>
+
+      <div class="badge-filter-wrap filter-step-wrap">
+        <button id="badge-filter-btn" class="multi-filter-btn step-filter-btn">
+          <span class="step-filter-icon">🕓</span>
+          <span class="step-filter-label" data-i18n="aktivitaetenPlaceholder">Bisherige Aktivitäten</span>
+          <span class="step-filter-chevron">▾</span>
+        </button>
+        <div id="badge-filter-dropdown" class="multi-filter-dropdown">
+          <div class="multi-filter-dropdown-note" data-i18n="aktivitaetenNote">Zeigt, womit das Unternehmen in der Vergangenheit bereits dabei war – keine Aussage über aktuell laufende Angebote.</div>
+          <div class="badge-filter-toggle">
+            <span data-i18n="kombinationLabel">Kombination</span>
+            <div class="badge-filter-toggle-btn">
+              <button id="badge-mode-or" class="active" data-mode="or" data-i18n="oderLabel">ODER</button>
+              <button id="badge-mode-and" data-mode="and" data-i18n="undLabel">UND</button>
+            </div>
+          </div>
+          <div id="badge-filter-options"></div>
+        </div>
+      </div>
+
+      <div class="badge-filter-wrap filter-step-wrap">
+        <button id="fachbereich-filter-btn" class="multi-filter-btn step-filter-btn">
+          <span class="step-filter-icon">🎓</span>
+          <span class="step-filter-label" data-i18n="fachbereichePlaceholder">Fachbereiche</span>
+          <span class="step-filter-chevron">▾</span>
+        </button>
+        <div id="fachbereich-filter-dropdown" class="multi-filter-dropdown">
+          <div class="badge-filter-toggle">
+            <span data-i18n="kombinationLabel">Kombination</span>
+            <div class="badge-filter-toggle-btn">
+              <button id="fachbereich-mode-or" class="active" data-mode="or" data-i18n="oderLabel">ODER</button>
+              <button id="fachbereich-mode-and" data-mode="and" data-i18n="undLabel">UND</button>
+            </div>
+          </div>
+          <div id="fachbereich-filter-options" class="multi-filter-options-scroll"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="filter-sidebar-footer">
+      <button id="reset-btn" data-i18n="resetBtn">↻ Zurücksetzen</button>
+    </div>
+  </aside>
+
+  <div id="content-area">
+    <div id="map"></div>
+    <button id="sidebar-toggle-btn" title="Liste ein-/ausblenden">☰</button>
+
+    <div id="sidebar">
+      <div id="sidebar-header">
+        <span data-i18n="sidebarHeading">Unternehmen</span>
+        <button id="sidebar-close-btn" title="Liste ausblenden">✕</button>
+      </div>
+      <div id="sidebar-list"></div>
+    </div>
   </div>
 </div>
 
 <div id="detail-overlay"></div>
 <div id="detail-panel">
   <button class="panel-close" id="panel-close">✕</button>
+  <button class="panel-close" id="panel-admin-edit-btn" title="Bearbeiten" style="display:none">✏️</button>
   <div id="panel-content"></div>
 </div>
 
@@ -704,6 +1179,171 @@
 
   const { createClient } = window.supabase;
   const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // ──────────────────────────────────────────
+  //  🔐 Auth-Status: anonyme Besucher + Admin-Login
+  //  Jeder Besucher bekommt automatisch eine stabile, anonyme
+  //  Identität (nötig, damit "eigene Notizen" erkannt werden).
+  //  Admins loggen sich zusätzlich per E-Mail/Passwort ein.
+  // ──────────────────────────────────────────
+  let currentUserId = null;
+  let isAdmin = false;
+
+  async function ensureAuthSession() {
+    const { data: { session } } = await db.auth.getSession();
+    if (!session) {
+      const { data, error } = await db.auth.signInAnonymously();
+      if (error) {
+        console.error('Anonyme Anmeldung fehlgeschlagen:', error.message);
+        return;
+      }
+      currentUserId = data.user?.id ?? null;
+    } else {
+      currentUserId = session.user.id;
+    }
+    await refreshAdminStatus();
+  }
+
+  async function refreshAdminStatus() {
+    const { data, error } = await db.rpc('is_admin');
+    isAdmin = !error && data === true;
+    updateAdminUi();
+  }
+
+  db.auth.onAuthStateChange((_event, session) => {
+    currentUserId = session?.user?.id ?? null;
+    refreshAdminStatus();
+  });
+
+  // ──────────────────────────────────────────
+  //  🌐 Sprach-System (DE/EN) — übersetzt nur feste Oberflächentexte.
+  //  Daten aus Supabase (Branche, Standorte, Notizen, etc.) bleiben unverändert,
+  //  da sie direkt aus der Datenbank stammen.
+  // ──────────────────────────────────────────
+  const I18N = {
+    de: {
+      appTitle: '🏢 Unternehmenskarte',
+      searchPlaceholder: 'Suche in allen Feldern…',
+      step01Label: 'Schritt 01',
+      step01Title: 'Branche',
+      branchePlaceholder: 'Branche wählen',
+      brancheSearchPlaceholder: 'Branche suchen…',
+      step02Label: 'Schritt 02',
+      step02Title: 'Wo in der Region?',
+      standortPlaceholder: 'Standort wählen',
+      standortSearchPlaceholder: 'Ort suchen…',
+      step03Label: 'Schritt 03',
+      step03Title: 'Die Eckdaten',
+      aktivitaetenPlaceholder: 'Bisherige Aktivitäten',
+      aktivitaetenNote: 'Zeigt, womit das Unternehmen in der Vergangenheit bereits dabei war – keine Aussage über aktuell laufende Angebote.',
+      kombinationLabel: 'Kombination',
+      oderLabel: 'ODER',
+      undLabel: 'UND',
+      fachbereichePlaceholder: 'Fachbereiche',
+      resetBtn: '↻ Zurücksetzen',
+      sidebarHeading: 'Unternehmen',
+      resultCount: (n) => `${n} Unternehmen`,
+      sidebarEmpty: 'Keine Unternehmen gefunden.',
+      keineTreffer: 'Keine Treffer',
+      keineAngaben: 'Keine Angaben',
+      mehrAnzeigen: 'Mehr anzeigen',
+      bisherigeAktivitaeten: 'Bisherige Aktivitäten',
+      kontakt: 'Kontakt',
+      standorte: 'Standorte',
+      gesuchteFachbereiche: 'Gesuchte Fachbereiche',
+      mitarbeitende: 'Mitarbeitende',
+      notizen: 'Notizen',
+     /* initiativbewerbungJa: '✓ Potentiell interessant', */
+      notizenHeading: 'Notizen',
+      notizPlaceholder: 'Notiz hinzufügen…',
+      notizSpeichern: 'Speichern',
+      notizAbbrechen: 'Abbrechen',
+      notizBearbeiten: 'Bearbeiten',
+      notizLoeschen: 'Löschen',
+      notizLeer: 'Noch keine Notizen vorhanden.',
+      notizSpeichert: 'Wird gespeichert…',
+      notizFehler: 'Fehler beim Speichern. Bitte erneut versuchen.',
+      notizLoeschenBestaetigung: 'Diese Notiz wirklich löschen?',
+      notizAusstehend: 'Ausstehend',
+      notizFreigeben: 'Freigeben',
+      panelAktivitaetenNote: 'Womit das Unternehmen in der Vergangenheit bereits dabei war – keine Aussage über aktuell laufende Angebote.',
+    },
+    en: {
+      appTitle: '🏢 Company Map',
+      searchPlaceholder: 'Search all fields…',
+      step01Label: 'Step 01',
+      step01Title: 'Industry',
+      branchePlaceholder: 'Select industry',
+      brancheSearchPlaceholder: 'Search industry…',
+      step02Label: 'Step 02',
+      step02Title: 'Where in the region?',
+      standortPlaceholder: 'Select location',
+      standortSearchPlaceholder: 'Search location…',
+      step03Label: 'Step 03',
+      step03Title: 'Key details',
+      aktivitaetenPlaceholder: 'Past activities',
+      aktivitaetenNote: 'Shows what the company has already taken part in previously – not an indication of currently active offers.',
+      kombinationLabel: 'Combination',
+      oderLabel: 'OR',
+      undLabel: 'AND',
+      fachbereichePlaceholder: 'Fields of study',
+      resetBtn: '↻ Reset',
+      sidebarHeading: 'Companies',
+      resultCount: (n) => `${n} companies`,
+      sidebarEmpty: 'No companies found.',
+      keineTreffer: 'No matches',
+      keineAngaben: 'No information',
+      mehrAnzeigen: 'Show more',
+      bisherigeAktivitaeten: 'Past activities',
+      kontakt: 'Contact',
+      standorte: 'Locations',
+      gesuchteFachbereiche: 'Fields of study sought',
+      mitarbeitende: 'Employees',
+      notizen: 'Notes',
+      initiativbewerbungJa: '✓ Potentially interesting',
+      notizenHeading: 'Notes',
+      notizPlaceholder: 'Add a note…',
+      notizSpeichern: 'Save',
+      notizAbbrechen: 'Cancel',
+      notizBearbeiten: 'Edit',
+      notizLoeschen: 'Delete',
+      notizLeer: 'No notes yet.',
+      notizSpeichert: 'Saving…',
+      notizFehler: 'Error saving. Please try again.',
+      notizLoeschenBestaetigung: 'Really delete this note?',
+      notizAusstehend: 'Pending',
+      notizFreigeben: 'Approve',
+      panelAktivitaetenNote: 'What the company has already taken part in previously – not an indication of currently active offers.',
+    },
+  };
+
+  // ── Anfangssprache aus Browser-Einstellung ableiten ──
+  function detectInitialLang() {
+    const navLang = (navigator.language || navigator.userLanguage || 'de').toLowerCase();
+    return navLang.startsWith('de') ? 'de' : 'en';
+  }
+
+  let currentLang = detectInitialLang();
+
+  function t(key, ...args) {
+    const entry = I18N[currentLang][key] ?? I18N.de[key];
+    return typeof entry === 'function' ? entry(...args) : entry;
+  }
+
+  // Wendet die aktuelle Sprache auf alle statischen [data-i18n] / [data-i18n-placeholder] Elemente an
+  function applyStaticTranslations() {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      if (I18N.de[key] !== undefined) el.textContent = t(key);
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      const key = el.getAttribute('data-i18n-placeholder');
+      if (I18N.de[key] !== undefined) el.placeholder = t(key);
+    });
+    document.documentElement.lang = currentLang;
+    document.getElementById('lang-de-btn').classList.toggle('active', currentLang === 'de');
+    document.getElementById('lang-en-btn').classList.toggle('active', currentLang === 'en');
+  }
 
   // Karte initialisieren
   if (typeof L === 'undefined') {
@@ -766,24 +1406,63 @@
     }
   }
 
-  // ── Logo-Marker-Icon bauen (Favicon der Firmen-Webseite) ──
-  // Fällt automatisch auf den Standard-Leaflet-Marker zurück, falls die
-  // Firma keine Webseite hat oder das Favicon nicht ladbar ist.
-  const DEFAULT_ICON = new L.Icon.Default();
+  // ── Hilfsfunktion: Buchstaben-Platzhalter-Farbe (stabil pro Firma) ──
+  const INITIAL_BADGE_COLORS = [
+    '#2b2f36', '#3a4a63', '#4a5d4a', '#6a4a3a', '#5a3a5a', '#3a5a5a', '#5a4a2a',
+  ];
+  function colorForInitial(name) {
+    let hash = 0;
+    const s = String(name || '');
+    for (let i = 0; i < s.length; i++) hash = (hash * 31 + s.charCodeAt(i)) >>> 0;
+    return INITIAL_BADGE_COLORS[hash % INITIAL_BADGE_COLORS.length];
+  }
 
-  function buildCompanyIcon(c) {
-    const domain = extractDomain(c['Webseite']);
-    if (!domain) return DEFAULT_ICON;
+  // ── Favicon-Fallback-Kette ──
+  // Reihenfolge: 1) Favicon direkt von der Firmen-Webseite (/favicon.ico)
+  //              2) Google s2/favicons-Dienst
+  //              3) DuckDuckGo Icon-Dienst
+  // Erst wenn alle drei fehlschlagen, wird der Anfangsbuchstabe als Platzhalter verwendet.
+  function faviconCandidates(domain) {
+    if (!domain) return [];
+    return [
+      `https://${domain}/favicon.ico`,
+      `https://www.google.com/s2/favicons?sz=64&domain=${encodeURIComponent(domain)}`,
+      `https://icons.duckduckgo.com/ip3/${encodeURIComponent(domain)}.ico`,
+    ];
+  }
 
-    const faviconUrl = `https://www.google.com/s2/favicons?sz=64&domain=${encodeURIComponent(domain)}`;
-
-    return L.icon({
-      iconUrl: faviconUrl,
-      iconSize: [30, 30],
-      iconAnchor: [15, 15],
-      popupAnchor: [0, -15],
-      className: 'company-logo-marker',
+  // Lädt die erste funktionierende URL aus einer Kandidatenliste (Promise).
+  // Löst mit der URL auf, oder mit null, falls keine funktioniert hat.
+  function loadFirstWorkingImage(urls) {
+    return new Promise(resolve => {
+      let i = 0;
+      function tryNext() {
+        if (i >= urls.length) { resolve(null); return; }
+        const url = urls[i++];
+        const img = new Image();
+        img.onload = () => {
+          // Google/DuckDuckGo liefern teils einen generischen 16x16-Platzhalter
+          // statt eines 404 — sehr kleine "Icons" daher überspringen.
+          if (img.naturalWidth > 8 && img.naturalHeight > 8) resolve(url);
+          else tryNext();
+        };
+        img.onerror = tryNext;
+        img.src = url;
+      }
+      tryNext();
     });
+  }
+
+  // Baut ein rundes Buchstaben-Icon (Data-URL via SVG) als Logo-Ersatz.
+  function buildInitialIconUrl(name) {
+    const initial = String(name || '?').trim().charAt(0).toUpperCase() || '?';
+    const color = colorForInitial(name);
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64">
+      <circle cx="32" cy="32" r="32" fill="${color}"/>
+      <text x="32" y="32" text-anchor="middle" dominant-baseline="central"
+        font-family="Inter, Segoe UI, system-ui, sans-serif" font-size="28" font-weight="700" fill="#fff">${initial}</text>
+    </svg>`;
+    return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
   }
 
   // ── Hilfsfunktion: "X" in Badge-Status umwandeln ──
@@ -842,6 +1521,8 @@
   }
 
   // ── Badge-Definitionen (Spalte → Anzeigename) ──
+  // Hinweis: Diese Felder dokumentieren VERGANGENE Aktivitäten
+  // (z.B. "war schon mal auf der Messe DEG"), keine aktuell laufenden Angebote.
   const BADGE_FIELDS = [
     { key: 'Messe DEG',              label: 'Messe DEG' },
     { key: 'Messe ECRI',             label: 'Messe ECRI' },
@@ -855,7 +1536,7 @@
   function buildBadges(c, cssClass) {
     const active = BADGE_FIELDS.filter(f => isMarked(c[f.key]));
     if (active.length === 0) {
-      return `<span class="${cssClass}">Keine Angaben</span>`;
+      return `<span class="${cssClass}">${t('keineAngaben')}</span>`;
     }
     return active.map(f =>
       `<span class="${cssClass} active">✓ ${f.label}</span>`
@@ -870,8 +1551,9 @@
         ${c['Branche'] ? `<div class="popup-badges" style="margin-bottom:6px">${buildMultiValueBadges(c['Branche'], 'popup-badge', splitBranche)}</div>` : ''}
         ${(c['Adresse'] || c['Standorte']) ? `<div class="popup-row"><span>📍</span><span>${c['Adresse'] ?? c['Standorte']}</span></div>` : ''}
         ${c['Telefon'] ? `<div class="popup-row"><span>📞</span><span>${c['Telefon']}</span></div>` : ''}
+        <div class="popup-badges-label">${t('bisherigeAktivitaeten')}</div>
         <div class="popup-badges">${buildBadges(c, 'popup-badge')}</div>
-        <button class="popup-more-btn" onclick="openDetailPanel(${index})">Mehr anzeigen</button>
+        <button class="popup-more-btn" onclick="openDetailPanel(${index})">${t('mehrAnzeigen')}</button>
       </div>
     `;
   }
@@ -890,52 +1572,382 @@
       ${c['Branche'] ? `<div class="panel-multi-badges" style="margin-bottom:16px">${buildMultiValueBadges(c['Branche'], 'panel-multi-badge', splitBranche)}</div>` : ''}
 
       <div class="panel-section">
-        <h3>Kontakt</h3>
+        <h3>${t('kontakt')}</h3>
         ${(c['Adresse'] || c['Standorte']) ? `<div class="panel-row"><span>📍</span><span>${c['Adresse'] ?? c['Standorte']}</span></div>` : ''}
         ${c['Telefon'] ? `<div class="panel-row"><span>📞</span><span>${c['Telefon']}</span></div>` : ''}
         ${email ? `<div class="panel-row"><span>✉️</span><span>${email}</span></div>` : ''}
         ${website ? `<div class="panel-row"><span>🌐</span><span>${website}</span></div>` : ''}
         ${c['Kontaktperson'] ? `<div class="panel-row"><span>👤</span><span>${c['Kontaktperson']}</span></div>` : ''}
-        ${c['Erreichbarkeit'] ? `<div class="panel-row"><span>📶</span><span>${c['Erreichbarkeit']}</span></div>` : ''}
+        ${/* c['Erreichbarkeit'] ? `<div class="panel-row"><span>📶</span><span>${c['Erreichbarkeit']}</span></div>` : '' */ ''}
       </div>
 
       ${c['Standorte'] ? `
       <div class="panel-section">
-        <h3>Standorte</h3>
+        <h3>${t('standorte')}</h3>
         <div class="panel-multi-badges">${buildMultiValueBadges(c['Standorte'], 'panel-multi-badge')}</div>
       </div>` : ''}
 
       ${(c['Gesuchte Fachbereiche und Studiengänge'] || c['MA']) ? `
       <div class="panel-section">
-        <h3>Gesuchte Fachbereiche</h3>
+        <h3>${t('gesuchteFachbereiche')}</h3>
         ${c['Gesuchte Fachbereiche und Studiengänge'] ? `<div class="panel-multi-badges">${buildMultiValueBadges(c['Gesuchte Fachbereiche und Studiengänge'], 'panel-multi-badge')}</div>` : ''}
-        ${c['MA'] ? `<div class="panel-row" style="margin-top:8px"><span>👥</span><span>${c['MA']} Mitarbeitende</span></div>` : ''}
+        ${c['MA'] ? `<div class="panel-row" style="margin-top:8px"><span>👥</span><span>${c['MA']} ${t('mitarbeitende')}</span></div>` : ''}
       </div>` : ''}
 
       <div class="panel-section">
-        <h3>Möglichkeiten</h3>
-        <div class="panel-badges">${buildBadges(c, 'panel-badge')}</div>
+        <h3>${t('bisherigeAktivitaeten')}</h3>
+        <div class="panel-section-note">${t('panelAktivitaetenNote')}</div>
+        <div class="panel-badges">
+        ${buildBadges(c, 'panel-badge')}
+        </div>
+      </div> 
+
+      <div class="panel-section">
+        <h3>${t('notizenHeading')}</h3>
+        <div id="notes-container" data-unternehmen-id="${c.id}">
+          <div class="notes-list" id="notes-list"><!-- per JS befüllt --></div>
+          <div class="note-add-form">
+            <textarea id="note-new-text" placeholder="${t('notizPlaceholder')}"></textarea>
+            <button class="note-add-btn" id="note-add-btn">${t('notizSpeichern')}</button>
+            <div class="note-status" id="note-status"></div>
+          </div>
+        </div>
       </div>
-
-      ${c['Kontakt / eigene Suche'] ? `
-      <div class="panel-section">
-        <h3>Notizen</h3>
-        <div class="panel-row"><span>📝</span><span>${c['Kontakt / eigene Suche']}</span></div>
-      </div>` : ''}
     `;
+  }
+
+  // ──────────────────────────────────────────
+  //  ✏️ Admin-Bearbeitungsmodus für Unternehmenseinträge
+  // ──────────────────────────────────────────
+  const EDITABLE_TEXT_FIELDS = [
+    { key: 'Unternehmen', label: 'Unternehmen' },
+    { key: 'Branche', label: 'Branche (mit "/" trennen)' },
+    { key: 'Adresse', label: 'Adresse' },
+    { key: 'Standorte', label: 'Standorte (mit ";" trennen)' },
+    { key: 'Telefon', label: 'Telefon' },
+    { key: 'EMail', label: 'E-Mail' },
+    { key: 'Webseite', label: 'Webseite' },
+    { key: 'Kontaktperson', label: 'Kontaktperson' },
+    { key: 'MA', label: 'Mitarbeitende' },
+    { key: 'Gesuchte Fachbereiche und Studiengänge', label: 'Gesuchte Fachbereiche (mit ";" trennen)' },
+  ];
+
+  let currentDetailIndex = null;
+
+  function buildEditForm(c) {
+    const textFields = EDITABLE_TEXT_FIELDS.map(f => `
+      <div class="edit-field-row">
+        <label>${f.label}</label>
+        <input type="text" data-edit-key="${f.key}" value="${escapeHtml(c[f.key] ?? '')}">
+      </div>
+    `).join('');
+
+    const badgeCheckboxes = BADGE_FIELDS.map(f => `
+      <label class="edit-checkbox-row">
+        <input type="checkbox" data-edit-badge-key="${f.key.replace(/"/g, '&quot;')}" ${isMarked(c[f.key]) ? 'checked' : ''}>
+        <span>${f.label}</span>
+      </label>
+    `).join('');
+
+    const interestingChecked = isMarked(c['Kontakt / eigene Suche']) ? 'checked' : '';
+
+    return `
+      <div class="panel-name">Eintrag bearbeiten</div>
+      ${textFields}
+      <div class="panel-section">
+        <h3>Bisherige Aktivitäten</h3>
+        ${badgeCheckboxes}
+      </div>
+      <div class="panel-section">
+        <label class="edit-checkbox-row">
+          <input type="checkbox" id="edit-interesting" ${interestingChecked}>
+          <span>Potentiell interessant (Kontakt / eigene Suche)</span>
+        </label>
+      </div>
+      <div class="edit-actions">
+        <button class="edit-cancel-btn" id="edit-cancel-btn">Abbrechen</button>
+        <button class="edit-save-btn" id="edit-save-btn">Speichern</button>
+      </div>
+      <div class="edit-actions">
+        <button class="edit-delete-btn" id="edit-delete-btn">Eintrag löschen</button>
+      </div>
+      <div class="note-status" id="edit-status"></div>
+    `;
+  }
+
+  function enterEditMode(index) {
+    const c = allData[index];
+    document.getElementById('panel-content').innerHTML = buildEditForm(c);
+
+    document.getElementById('edit-cancel-btn').addEventListener('click', () => {
+      document.getElementById('panel-content').innerHTML = buildPanel(c);
+      wireNotesSection(c);
+    });
+
+    document.getElementById('edit-save-btn').addEventListener('click', () => saveCompanyEdit(index));
+    document.getElementById('edit-delete-btn').addEventListener('click', () => deleteCompany(index));
+  }
+
+  async function saveCompanyEdit(index) {
+    const c = allData[index];
+    const statusEl = document.getElementById('edit-status');
+    statusEl.classList.remove('error');
+    statusEl.textContent = 'Wird gespeichert…';
+
+    const update = {};
+    document.querySelectorAll('[data-edit-key]').forEach(input => {
+      update[input.dataset.editKey] = input.value;
+    });
+    document.querySelectorAll('[data-edit-badge-key]').forEach(cb => {
+      update[cb.dataset.editBadgeKey] = cb.checked ? 'X' : '';
+    });
+    update['Kontakt / eigene Suche'] = document.getElementById('edit-interesting').checked ? 'X' : '';
+
+    const { error } = await db.from('Unternehmen_neu').update(update).eq('id', c.id);
+    if (error) {
+      console.error('Fehler beim Speichern:', error.message);
+      statusEl.textContent = 'Fehler beim Speichern: ' + error.message;
+      statusEl.classList.add('error');
+      return;
+    }
+
+    await loadCompanies();
+    const newIndex = allData.findIndex(x => x.id === c.id);
+    if (newIndex >= 0) openDetailPanel(newIndex);
+  }
+
+  async function deleteCompany(index) {
+    const c = allData[index];
+    if (!confirm(`"${c['Unternehmen']}" wirklich endgültig löschen?`)) return;
+
+    const { error } = await db.from('Unternehmen_neu').delete().eq('id', c.id);
+    if (error) {
+      console.error('Fehler beim Löschen:', error.message);
+      document.getElementById('edit-status').textContent = 'Fehler beim Löschen: ' + error.message;
+      document.getElementById('edit-status').classList.add('error');
+      return;
+    }
+
+    closeDetailPanel();
+    await loadCompanies();
+  }
+
+
+  //  Spalten: id, unternehmen_id (FK auf Unternehmen_neu.id), text, created_at, updated_at
+  // ──────────────────────────────────────────
+  function formatNoteDate(iso) {
+    try {
+      const d = new Date(iso);
+      return d.toLocaleString(currentLang === 'de' ? 'de-DE' : 'en-GB', {
+        day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
+      });
+    } catch {
+      return '';
+    }
+  }
+
+  function escapeHtml(s) {
+    return String(s ?? '')
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  async function loadNotesForCompany(unternehmenId) {
+    const { data, error } = await db
+      .from('notizen')
+      .select('*')
+      .eq('unternehmen_id', unternehmenId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Fehler beim Laden der Notizen:', error.message);
+      return [];
+    }
+    return data || [];
+  }
+
+  function renderNotesList(notes) {
+    const list = document.getElementById('notes-list');
+    if (!list) return;
+
+    if (notes.length === 0) {
+      list.innerHTML = `<div class="note-empty">${t('notizLeer')}</div>`;
+      return;
+    }
+
+    list.innerHTML = notes.map(n => {
+      const isOwn = n.created_by === currentUserId;
+      const canEditOrDelete = (isOwn && !n.approved) || isAdmin;
+      const statusBadge = !n.approved
+        ? `<span class="note-pending-badge">${t('notizAusstehend')}</span>`
+        : '';
+      const approveBtn = (isAdmin && !n.approved)
+        ? `<button class="note-approve-btn" data-note-id="${n.id}">${t('notizFreigeben')}</button>`
+        : '';
+      return `
+      <div class="note-item" data-note-id="${n.id}">
+        <div class="note-item-text" data-note-text>${escapeHtml(n.text)}</div>
+        <div class="note-item-meta">
+          <span class="note-item-date">${formatNoteDate(n.created_at)} ${statusBadge}</span>
+          <span class="note-item-actions">
+            ${approveBtn}
+            ${canEditOrDelete ? `<button class="note-edit-btn" data-note-id="${n.id}">${t('notizBearbeiten')}</button>` : ''}
+            ${canEditOrDelete ? `<button class="note-delete-btn" data-note-id="${n.id}">${t('notizLoeschen')}</button>` : ''}
+          </span>
+        </div>
+      </div>
+    `;
+    }).join('');
+
+    list.querySelectorAll('.note-approve-btn').forEach(btn => {
+      btn.addEventListener('click', () => approveNote(btn.dataset.noteId));
+    });
+
+    list.querySelectorAll('.note-edit-btn').forEach(btn => {
+      btn.addEventListener('click', () => startEditNote(btn.dataset.noteId));
+    });
+    list.querySelectorAll('.note-delete-btn').forEach(btn => {
+      btn.addEventListener('click', () => deleteNote(btn.dataset.noteId));
+    });
+  }
+
+  async function refreshNotes(unternehmenId) {
+    const notes = await loadNotesForCompany(unternehmenId);
+    renderNotesList(notes);
+  }
+
+  function setNoteStatus(msg, isError = false) {
+    const el = document.getElementById('note-status');
+    if (!el) return;
+    el.textContent = msg || '';
+    el.classList.toggle('error', !!isError);
+  }
+
+  async function addNote(unternehmenId) {
+    const textarea = document.getElementById('note-new-text');
+    const text = textarea.value.trim();
+    if (!text) return;
+
+    const addBtn = document.getElementById('note-add-btn');
+    addBtn.disabled = true;
+    setNoteStatus(t('notizSpeichert'));
+
+    const { error } = await db.from('notizen').insert({
+      unternehmen_id: unternehmenId,
+      text,
+    });
+
+    addBtn.disabled = false;
+
+    if (error) {
+      console.error('Fehler beim Speichern der Notiz:', error.message);
+      setNoteStatus(t('notizFehler'), true);
+      return;
+    }
+
+    textarea.value = '';
+    setNoteStatus('');
+    await refreshNotes(unternehmenId);
+  }
+
+  function startEditNote(noteId) {
+    const item = document.querySelector(`.note-item[data-note-id="${noteId}"]`);
+    if (!item) return;
+    const textEl = item.querySelector('[data-note-text]');
+    const currentText = textEl.textContent;
+
+    item.innerHTML = `
+      <textarea class="note-edit-textarea">${escapeHtml(currentText)}</textarea>
+      <div class="note-edit-actions">
+        <button class="note-cancel-btn" data-note-id="${noteId}">${t('notizAbbrechen')}</button>
+        <button class="note-save-btn" data-note-id="${noteId}">${t('notizSpeichern')}</button>
+      </div>
+    `;
+
+    item.querySelector('.note-cancel-btn').addEventListener('click', () => {
+      const unternehmenId = document.getElementById('notes-container').dataset.unternehmenId;
+      refreshNotes(unternehmenId);
+    });
+    item.querySelector('.note-save-btn').addEventListener('click', () => saveEditedNote(noteId));
+  }
+
+  async function saveEditedNote(noteId) {
+    const item = document.querySelector(`.note-item[data-note-id="${noteId}"]`);
+    const textarea = item.querySelector('.note-edit-textarea');
+    const newText = textarea.value.trim();
+    if (!newText) return;
+
+    const { error } = await db
+      .from('notizen')
+      .update({ text: newText, updated_at: new Date().toISOString() })
+      .eq('id', noteId);
+
+    if (error) {
+      console.error('Fehler beim Bearbeiten der Notiz:', error.message);
+      setNoteStatus(t('notizFehler'), true);
+      return;
+    }
+
+    const unternehmenId = document.getElementById('notes-container').dataset.unternehmenId;
+    await refreshNotes(unternehmenId);
+  }
+
+  async function approveNote(noteId) {
+    const { error } = await db.from('notizen').update({ approved: true }).eq('id', noteId);
+    if (error) {
+      console.error('Fehler beim Freigeben der Notiz:', error.message);
+      setNoteStatus(t('notizFehler'), true);
+      return;
+    }
+    const unternehmenId = document.getElementById('notes-container').dataset.unternehmenId;
+    await refreshNotes(unternehmenId);
+  }
+
+  async function deleteNote(noteId) {
+    if (!confirm(t('notizLoeschenBestaetigung'))) return;
+
+    const { error } = await db.from('notizen').delete().eq('id', noteId);
+
+    if (error) {
+      console.error('Fehler beim Löschen der Notiz:', error.message);
+      setNoteStatus(t('notizFehler'), true);
+      return;
+    }
+
+    const unternehmenId = document.getElementById('notes-container').dataset.unternehmenId;
+    await refreshNotes(unternehmenId);
+  }
+
+  function wireNotesSection(c) {
+    const unternehmenId = c.id;
+    refreshNotes(unternehmenId);
+    document.getElementById('note-add-btn').addEventListener('click', () => addNote(unternehmenId));
+    document.getElementById('note-new-text').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) addNote(unternehmenId);
+    });
   }
 
   // ── Detail-Panel öffnen/schließen ──
   window.openDetailPanel = function(index) {
+    currentDetailIndex = index;
     const c = allData[index];
     document.getElementById('panel-content').innerHTML = buildPanel(c);
     document.getElementById('detail-panel').classList.add('open');
     document.getElementById('detail-overlay').classList.add('open');
+
+    const editBtn = document.getElementById('panel-admin-edit-btn');
+    editBtn.style.display = isAdmin ? 'flex' : 'none';
+
+    wireNotesSection(c);
   };
+
+  document.getElementById('panel-admin-edit-btn').addEventListener('click', () => {
+    if (currentDetailIndex !== null) enterEditMode(currentDetailIndex);
+  });
 
   function closeDetailPanel() {
     document.getElementById('detail-panel').classList.remove('open');
     document.getElementById('detail-overlay').classList.remove('open');
+    currentDetailIndex = null;
   }
 
   document.getElementById('panel-close').addEventListener('click', closeDetailPanel);
@@ -948,7 +1960,7 @@
     return Object.values(c).some(val => val && String(val).toLowerCase().includes(q));
   }
 
-  // ── Generische Mehrfachauswahl-Filter (Möglichkeiten & Fachbereiche) ──
+  // ── Generische Mehrfachauswahl-Filter (Bisherige Aktivitäten & Fachbereiche) ──
   // Erzeugt einen unabhängigen Filter-Zustand mit UND/ODER-Logik und
   // verdrahtet Dropdown, Checkboxen und Toggle-Buttons automatisch.
   function createMultiFilter(config) {
@@ -969,7 +1981,14 @@
     function updateButtonLabel() {
       const btn = document.getElementById(config.btnId);
       const count = state.selected.size;
-      btn.textContent = count > 0 ? `${config.label} (${count}) ▾` : `${config.label} ▾`;
+      const labelEl = btn.querySelector('.step-filter-label');
+      const text = count > 0 ? `${config.label} (${count})` : config.placeholder || `${config.label} wählen`;
+
+      if (labelEl) {
+        labelEl.textContent = text;
+      } else {
+        btn.textContent = count > 0 ? `${config.label} (${count}) ▾` : `${config.label} ▾`;
+      }
       btn.classList.toggle('has-selection', count > 0);
     }
 
@@ -1019,7 +2038,7 @@
         if (!emptyMsg) {
           emptyMsg = document.createElement('div');
           emptyMsg.className = 'multi-filter-empty';
-          emptyMsg.textContent = 'Keine Treffer';
+          emptyMsg.textContent = t('keineTreffer');
           container.appendChild(emptyMsg);
         }
       } else if (emptyMsg) {
@@ -1078,17 +2097,21 @@
       });
     }
 
-    return { matches, populateOptions, reset, dropdownId: config.dropdownId };
+    return { matches, populateOptions, reset, refreshLabel: updateButtonLabel, dropdownId: config.dropdownId };
   }
 
-  // ── Möglichkeiten-Filter (Messe/Praktika/Thesis/etc., feste Liste) ──
+  // ── Bisherige-Aktivitäten-Filter (Messe/Praktika/Thesis/etc., feste Liste) ──
+  // Wichtig: Diese Werte dokumentieren VERGANGENE Aktivitäten, keine
+  // aktuell laufenden Angebote. Label, Platzhalter und Dropdown-Hinweistext
+  // stellen das bewusst klar (s. HTML + Dropdown-Note oben).
   const moeglichkeitenFilter = createMultiFilter({
     btnId: 'badge-filter-btn',
     dropdownId: 'badge-filter-dropdown',
     optionsId: 'badge-filter-options',
     modeOrId: 'badge-mode-or',
     modeAndId: 'badge-mode-and',
-    label: 'Möglichkeiten',
+    get label() { return t('aktivitaetenPlaceholder'); },
+    get placeholder() { return t('aktivitaetenPlaceholder'); },
     hasValue: (c, key) => isMarked(c[key]),
   });
 
@@ -1099,7 +2122,8 @@
     optionsId: 'fachbereich-filter-options',
     modeOrId: 'fachbereich-mode-or',
     modeAndId: 'fachbereich-mode-and',
-    label: 'Fachbereiche',
+    get label() { return t('fachbereichePlaceholder'); },
+    get placeholder() { return t('fachbereichePlaceholder'); },
     hasValue: (c, value) => splitMultiValue(c['Gesuchte Fachbereiche und Studiengänge']).includes(value),
   });
 
@@ -1110,7 +2134,8 @@
     optionsId: 'standort-filter-options',
     searchInputId: 'standort-search-input',
     fixedMode: 'or',
-    label: 'Standorte',
+    get label() { return t('step02Title'); },
+    get placeholder() { return t('standortPlaceholder'); },
     hasValue: (c, value) => splitMultiValue(c['Standorte']).includes(value),
   });
 
@@ -1121,7 +2146,8 @@
     optionsId: 'branche-filter-options',
     searchInputId: 'branche-search-input',
     fixedMode: 'or',
-    label: 'Branchen',
+    get label() { return t('step01Title'); },
+    get placeholder() { return t('branchePlaceholder'); },
     hasValue: (c, value) => splitBranche(c['Branche']).includes(value),
   });
 
@@ -1155,15 +2181,36 @@
       if (isNaN(lat) || isNaN(lng)) return;
       if (lat === PLACEHOLDER_LAT && lng === PLACEHOLDER_LNG) return;
 
-      const marker = L.marker([lat, lng], { icon: buildCompanyIcon(c) })
+      // Marker sofort mit Buchstaben-Platzhalter anzeigen (kein Warten auf Netzwerk),
+      // danach im Hintergrund auf das beste verfügbare Favicon umschalten.
+      const isInteresting = isMarked(c['Kontakt / eigene Suche']);
+      const markerSize = isInteresting ? 38 : 30;
+      const markerClass = 'company-logo-marker' + (isInteresting ? ' marker-interesting' : '');
+
+      const placeholderIcon = L.icon({
+        iconUrl: buildInitialIconUrl(c['Unternehmen']),
+        iconSize: [markerSize, markerSize],
+        iconAnchor: [markerSize / 2, markerSize / 2],
+        popupAnchor: [0, -markerSize / 2],
+        className: markerClass,
+      });
+
+      const marker = L.marker([lat, lng], { icon: placeholderIcon })
         .addTo(map)
         .bindPopup(buildPopup(c, index), { maxWidth: 300 });
 
-      // Falls das Favicon-Bild nicht lädt (404, ungültige Domain, o.ä.),
-      // automatisch auf den Standard-Marker zurückfallen.
-      const imgEl = marker.getElement()?.querySelector('img');
-      if (imgEl) {
-        imgEl.addEventListener('error', () => marker.setIcon(DEFAULT_ICON), { once: true });
+      const domain = extractDomain(c['Webseite']);
+      if (domain) {
+        loadFirstWorkingImage(faviconCandidates(domain)).then(workingUrl => {
+          if (!workingUrl) return;
+          marker.setIcon(L.icon({
+            iconUrl: workingUrl,
+            iconSize: [markerSize, markerSize],
+            iconAnchor: [markerSize / 2, markerSize / 2],
+            popupAnchor: [0, -markerSize / 2],
+            className: markerClass,
+          }));
+        });
       }
 
       activeMarkers.push(marker);
@@ -1171,8 +2218,7 @@
       visibleIndices.push(index);
     });
 
-    document.getElementById('result-count').textContent =
-      `${activeMarkers.length} Unternehmen`;
+    document.getElementById('result-count').textContent = t('resultCount', activeMarkers.length);
 
     renderSidebarList(visibleIndices);
   }
@@ -1182,7 +2228,7 @@
     const container = document.getElementById('sidebar-list');
 
     if (visibleIndices.length === 0) {
-      container.innerHTML = '<div class="sidebar-empty">Keine Unternehmen gefunden.</div>';
+      container.innerHTML = `<div class="sidebar-empty">${t('sidebarEmpty')}</div>`;
       return;
     }
 
@@ -1195,13 +2241,14 @@
       const c = allData[index];
       const meta = [c['Branche'], c['Standorte']].filter(Boolean).join(' · ');
       const name = c['Unternehmen'] ?? '';
-      const initial = name.trim().charAt(0).toUpperCase() || '?';
       const domain = extractDomain(c['Webseite']);
+      const candidates = faviconCandidates(domain);
+      const logoClass = 'sidebar-item-logo' + (isMarked(c['Kontakt / eigene Suche']) ? ' logo-interesting' : '');
 
-      const logoHtml = domain
-        ? `<img class="sidebar-item-logo" src="https://www.google.com/s2/favicons?sz=64&domain=${encodeURIComponent(domain)}"
-              alt="" onerror="this.outerHTML='<div class=&quot;sidebar-item-logo-placeholder&quot;>${initial}</div>'">`
-        : `<div class="sidebar-item-logo-placeholder">${initial}</div>`;
+      const logoHtml = candidates.length > 0
+        ? `<img class="${logoClass}" src="${candidates[0]}" data-fallback-index="0" data-company="${name.replace(/"/g, '&quot;')}"
+              alt="" onerror="window.__handleFaviconError(this, ${JSON.stringify(candidates).replace(/"/g, '&quot;')})">`
+        : `<img class="${logoClass}" src="${buildInitialIconUrl(name)}" alt="">`;
 
       return `
         <div class="sidebar-item" data-index="${index}">
@@ -1221,6 +2268,20 @@
       });
     });
   }
+
+  // ── Favicon-Fallback-Kette für <img onerror> (Sidebar-Liste) ──
+  // Probiert die nächste Kandidaten-URL; ist die Liste erschöpft, wird
+  // auf den Anfangsbuchstaben (SVG-Data-URL) umgeschaltet.
+  window.__handleFaviconError = function(imgEl, candidates) {
+    const nextIndex = parseInt(imgEl.dataset.fallbackIndex || '0', 10) + 1;
+    if (nextIndex < candidates.length) {
+      imgEl.dataset.fallbackIndex = String(nextIndex);
+      imgEl.src = candidates[nextIndex];
+    } else {
+      imgEl.removeAttribute('onerror');
+      imgEl.src = buildInitialIconUrl(imgEl.dataset.company || '?');
+    }
+  };
 
   // ── Karte zu einem Unternehmen zentrieren und Popup öffnen ──
   function focusCompanyOnMap(index) {
@@ -1356,9 +2417,86 @@
   document.getElementById('sidebar-toggle-btn').addEventListener('click', () => setSidebarOpen(true));
   document.getElementById('sidebar-close-btn').addEventListener('click', () => setSidebarOpen(false));
 
+  // ── Sprach-Toggle: DE/EN umschalten ──
+  function setLanguage(lang) {
+    if (lang !== 'de' && lang !== 'en') return;
+    currentLang = lang;
+    applyStaticTranslations();
+    // Filter-Button-Beschriftungen aktualisieren (zeigen ggf. Auswahlzahl + Label in neuer Sprache)
+    brancheFilter.refreshLabel();
+    standortFilter.refreshLabel();
+    moeglichkeitenFilter.refreshLabel();
+    fachbereichFilter.refreshLabel();
+    // Karte, Popups, Sidebar-Liste neu rendern, damit alle dynamischen Texte aktualisiert werden
+    renderMarkers();
+  }
+
+  document.getElementById('lang-de-btn').addEventListener('click', () => setLanguage('de'));
+  document.getElementById('lang-en-btn').addEventListener('click', () => setLanguage('en'));
+
+  // Initiale Sprache anwenden (aus Browser-Einstellung erkannt)
+  applyStaticTranslations();
+
   // Initiale Position setzen (Sidebar startet offen)
   setSidebarOpen(true);
 
+  // ── Admin-Login-Modal ──
+  const adminModal = document.getElementById('admin-modal');
+  const adminOverlay = document.getElementById('admin-overlay');
+  const adminLoginBtn = document.getElementById('admin-login-btn');
+
+  function openAdminModal() {
+    adminModal.classList.add('open');
+    adminOverlay.classList.add('open');
+  }
+  function closeAdminModal() {
+    adminModal.classList.remove('open');
+    adminOverlay.classList.remove('open');
+    document.getElementById('admin-login-status').textContent = '';
+  }
+
+  function updateAdminUi() {
+    adminLoginBtn.classList.toggle('is-admin', isAdmin);
+    adminLoginBtn.textContent = isAdmin ? '🔓 Admin' : '🔒 Admin';
+    document.getElementById('admin-login-form').style.display = isAdmin ? 'none' : 'block';
+    document.getElementById('admin-logged-in').style.display = isAdmin ? 'block' : 'none';
+    // Offenes Detail-Panel neu rendern, damit Freigeben-Buttons erscheinen/verschwinden
+    const notesContainer = document.getElementById('notes-container');
+    if (notesContainer) refreshNotes(notesContainer.dataset.unternehmenId);
+    document.getElementById('panel-admin-edit-btn').style.display =
+      (isAdmin && currentDetailIndex !== null) ? 'flex' : 'none';
+  }
+
+  adminLoginBtn.addEventListener('click', openAdminModal);
+  document.getElementById('admin-modal-close').addEventListener('click', closeAdminModal);
+  adminOverlay.addEventListener('click', closeAdminModal);
+
+  document.getElementById('admin-login-submit').addEventListener('click', async () => {
+    const email = document.getElementById('admin-email').value.trim();
+    const password = document.getElementById('admin-password').value;
+    const statusEl = document.getElementById('admin-login-status');
+    if (!email || !password) return;
+
+    statusEl.classList.remove('error');
+    statusEl.textContent = 'Wird eingeloggt…';
+
+    const { error } = await db.auth.signInWithPassword({ email, password });
+    if (error) {
+      statusEl.textContent = 'Login fehlgeschlagen: ' + error.message;
+      statusEl.classList.add('error');
+      return;
+    }
+    document.getElementById('admin-password').value = '';
+    closeAdminModal();
+  });
+
+  document.getElementById('admin-logout-btn').addEventListener('click', async () => {
+    await db.auth.signOut();
+    await ensureAuthSession(); // wieder anonym anmelden
+    closeAdminModal();
+  });
+
+  ensureAuthSession();
   loadCompanies();
 </script>
 </body>
