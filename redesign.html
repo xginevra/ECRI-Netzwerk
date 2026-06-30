@@ -1075,7 +1075,7 @@
       gesuchteFachbereiche: 'Gesuchte Fachbereiche',
       mitarbeitende: 'Mitarbeitende',
       notizen: 'Notizen',
-      initiativbewerbungJa: '✓ Potentiell interessant',
+     /* initiativbewerbungJa: '✓ Potentiell interessant', */
       notizenHeading: 'Notizen',
       notizPlaceholder: 'Notiz hinzufügen…',
       notizSpeichern: 'Speichern',
@@ -1416,10 +1416,9 @@
         <h3>${t('bisherigeAktivitaeten')}</h3>
         <div class="panel-section-note">${t('panelAktivitaetenNote')}</div>
         <div class="panel-badges">
-          ${buildBadges(c, 'panel-badge')}
-          ${isMarked(c['Kontakt / eigene Suche']) ? `<span class="panel-badge active">${t('initiativbewerbungJa')}</span>` : ''}
+        ${buildBadges(c, 'panel-badge')}
         </div>
-      </div>
+      </div> 
 
       <div class="panel-section">
         <h3>${t('notizenHeading')}</h3>
