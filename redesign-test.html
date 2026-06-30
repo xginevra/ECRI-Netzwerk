@@ -1,0 +1,2112 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Unternehmenskarte</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    :root {
+      --navy: #2b2f36;
+      --navy-soft: #3a3f48;
+      --accent: #4a4f58;
+      --accent-soft: #eceef0;
+      --surface: #ffffff;
+      --surface-subtle: #f5f5f6;
+      --border: #e2e3e6;
+      --text: #1f2125;
+      --text-muted: #8a8d93;
+      --radius-lg: 12px;
+      --radius-md: 8px;
+      --radius-sm: 6px;
+      --shadow-float: 0 10px 30px rgba(20, 21, 24, 0.16);
+      --shadow-soft: 0 2px 10px rgba(20, 21, 24, 0.08);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      background: var(--surface-subtle);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Schmale Kopfzeile: Logo + Suche + Ergebniszähler ── */
+    #app-header {
+      background: var(--navy);
+      color: #fff;
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 1000;
+      box-shadow: var(--shadow-soft);
+      flex-shrink: 0;
+    }
+
+    #app-header h1 {
+      font-size: 1.02rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+      margin-right: auto;
+    }
+
+    /* ── Sprach-Toggle (DE/EN) ── */
+    #lang-toggle {
+      display: flex;
+      border: 1px solid #ffffff3a;
+      border-radius: 14px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    #lang-toggle button {
+      border: none;
+      background: transparent;
+      color: #ffffffa0;
+      padding: 6px 12px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    #lang-toggle button.active {
+      background: var(--accent);
+      color: #fff;
+    }
+    #lang-toggle button:not(.active):hover {
+      background: #ffffff14;
+      color: #fff;
+    }
+
+    /* ── Body: linke Filter-Sidebar + Kartenbereich ── */
+    #app-body {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* ── Linke Filter-Sidebar (Step-Design) ── */
+    #filter-sidebar {
+      width: 300px;
+      flex-shrink: 0;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      padding: 26px 24px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 26px;
+    }
+
+    .filter-step-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .filter-step-title {
+      font-family: 'Georgia', 'Times New Roman', serif;
+      font-size: 1.32rem;
+      font-weight: 400;
+      color: var(--text);
+      margin-bottom: 16px;
+      line-height: 1.25;
+    }
+
+    .filter-step-subtitle {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: -10px;
+      margin-bottom: 16px;
+      line-height: 1.4;
+    }
+
+    .filter-step-wrap {
+      margin-bottom: 10px;
+    }
+    .filter-step-wrap:last-child { margin-bottom: 0; }
+
+    .step-filter-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      text-align: left;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .step-filter-btn:hover { border-color: var(--text-muted); }
+    .step-filter-btn.has-selection {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+    }
+
+    .step-filter-icon {
+      width: 34px;
+      height: 34px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      background: var(--surface-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+    }
+
+    .step-filter-label {
+      flex: 1;
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--text);
+      white-space: normal;
+    }
+
+    .step-filter-chevron {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      flex-shrink: 0;
+    }
+
+    .filter-sidebar-footer {
+      margin-top: auto;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    #reset-btn {
+      width: 100%;
+      padding: 11px 14px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    #reset-btn:hover { background: var(--surface-subtle); border-color: var(--text-muted); }
+
+    .search-wrap {
+      display: flex;
+      align-items: center;
+      position: relative;
+    }
+
+    #search-toggle-btn {
+      width: 36px;
+      height: 36px;
+      flex-shrink: 0;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: #ffffff14;
+      color: #fff;
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+    #search-toggle-btn:hover { background: #ffffff24; }
+    #search-toggle-btn.active { background: var(--accent); }
+
+    #search-input {
+      width: 0;
+      min-width: 0;
+      padding: 8px 0;
+      margin-left: 0;
+      border-radius: var(--radius-sm);
+      border: none;
+      font-size: 0.9rem;
+      background: #ffffff14;
+      color: #fff;
+      outline: none;
+      opacity: 0;
+      transition: width 0.22s ease, padding 0.22s ease, margin-left 0.22s ease, opacity 0.18s ease;
+    }
+    #search-input.open {
+      width: 220px;
+      padding: 8px 12px;
+      margin-left: 8px;
+      opacity: 1;
+    }
+    #search-input::placeholder { color: #ffffffa0; }
+    #search-input:focus { background: #ffffff24; }
+
+    #result-count {
+      font-size: 0.8rem;
+      color: #ffffffa0;
+      white-space: nowrap;
+    }
+
+    /* ── Badge-Filter Dropdown (Bisherige Aktivitäten & Fachbereiche) ── */
+    .badge-filter-wrap {
+      position: relative;
+    }
+
+    .multi-filter-btn {
+      padding: 8px 13px;
+      border-radius: var(--radius-sm);
+      border: none;
+      font-size: 0.85rem;
+      font-weight: 500;
+      background: #ffffff14;
+      color: #fff;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s;
+    }
+    .multi-filter-btn:hover { background: #ffffff24; }
+    .multi-filter-btn.has-selection {
+      background: var(--accent);
+    }
+
+    .multi-filter-dropdown {
+      display: none;
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      background: var(--surface);
+      color: var(--text);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-float);
+      padding: 14px;
+      width: 260px;
+      z-index: 1500;
+    }
+    .multi-filter-dropdown.open { display: block; }
+
+    .multi-filter-options-scroll {
+      max-height: 240px;
+      overflow-y: auto;
+    }
+
+    .badge-filter-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+    .badge-filter-toggle-btn {
+      display: flex;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .badge-filter-toggle-btn button {
+      border: none;
+      background: var(--surface);
+      padding: 3px 10px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--text-muted);
+    }
+    .badge-filter-toggle-btn button.active {
+      background: var(--navy);
+      color: #fff;
+    }
+
+    .multi-filter-dropdown-note {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      background: var(--surface-subtle);
+      border-radius: var(--radius-sm);
+      padding: 7px 9px;
+      margin-bottom: 10px;
+      line-height: 1.4;
+    }
+
+    .badge-filter-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 4px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      border-radius: var(--radius-sm);
+    }
+    .badge-filter-option:hover { background: var(--surface-subtle); }
+    .badge-filter-option input { cursor: pointer; accent-color: var(--accent); }
+
+    .multi-filter-search {
+      width: 100%;
+      padding: 7px 10px;
+      margin-bottom: 8px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .multi-filter-search:focus { border-color: var(--accent); }
+
+    .badge-filter-option.is-hidden { display: none; }
+
+    .multi-filter-empty {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      padding: 6px 4px;
+    }
+
+    /* ── Inhaltsbereich: Karte mit schwebender Sidebar ── */
+    #content-area {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    /* ── Sidebar mit Unternehmensliste (schwebt über der Karte) ── */
+    #sidebar {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      bottom: 14px;
+      width: 320px;
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-float);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 1050;
+      transition: opacity 0.18s ease, transform 0.18s ease;
+    }
+    #sidebar.collapsed {
+      opacity: 0;
+      transform: translateX(12px);
+      pointer-events: none;
+    }
+
+    #sidebar-header {
+      padding: 13px 16px;
+      background: var(--navy);
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      color: #fff;
+      white-space: nowrap;
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    #sidebar-close-btn {
+      width: 26px;
+      height: 26px;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: #ffffff14;
+      color: #fff;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+    #sidebar-close-btn:hover { background: #ffffff28; }
+
+    #sidebar-list {
+      flex: 1;
+      overflow-y: auto;
+      white-space: nowrap;
+    }
+
+    .sidebar-item {
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--border);
+      border-left: 3px solid transparent;
+      cursor: pointer;
+      transition: background 0.15s, border-left-color 0.15s;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .sidebar-item:hover { background: var(--surface-subtle); }
+    .sidebar-item.active {
+      background: var(--accent-soft);
+      border-left-color: var(--accent);
+    }
+
+    .sidebar-item-logo {
+      width: 30px;
+      height: 30px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      object-fit: contain;
+      background: var(--surface-subtle);
+      border: 1px solid var(--border);
+      margin-top: 1px;
+    }
+
+    /* ── Hervorgehobenes Logo: "Potentiell interessant" (Kontakt/eigene Suche = X) ──
+       Passend zur Hervorhebung auf der Karte: etwas größer, goldfarbener Rand. ── */
+    .sidebar-item-logo.logo-interesting {
+      width: 36px;
+      height: 36px;
+      border: 2px solid #c98a2c;
+      box-shadow: 0 0 0 2px rgba(201, 138, 44, 0.18);
+    }
+
+    .sidebar-item-logo-placeholder {
+      width: 30px;
+      height: 30px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      background: var(--navy);
+      color: #fff;
+      font-size: 0.78rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 1px;
+    }
+
+    .sidebar-item-text {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .sidebar-item-name {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--text);
+      white-space: normal;
+      margin-bottom: 2px;
+    }
+    .sidebar-item-meta {
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      white-space: normal;
+    }
+
+    .sidebar-empty {
+      padding: 24px 16px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      white-space: normal;
+      text-align: center;
+    }
+
+    /* ── Sidebar Ein-/Ausklapp-Knopf ──
+       Standardposition oben rechts; wird per JS-gesetzter CSS-Variable
+       nach links verschoben, falls der Leaflet-Layer-Schalter dort sitzt,
+       damit sich beide nie überlappen. ── */
+    #sidebar-toggle-btn {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      z-index: 1040;
+      width: 36px;
+      height: 36px;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      box-shadow: var(--shadow-float);
+      color: var(--navy);
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s ease, right 0.18s ease;
+    }
+    #sidebar-toggle-btn.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    #sidebar-toggle-btn:hover { background: var(--surface-subtle); }
+
+    /* ── Leaflet Layer-Schalter: dynamisch neben Sidebar/Toggle-Button ──
+       Die rechte Position wird per JS über --layers-control-right gesetzt,
+       je nachdem ob die Sidebar offen ist (dann links von ihr) oder
+       eingeklappt (dann links vom ☰-Button). So überlappen sie sich nie. */
+    .leaflet-top.leaflet-right {
+      right: var(--layers-control-right, 14px) !important;
+      transition: right 0.18s ease;
+    }
+    .layers-control-box {
+      border-radius: var(--radius-sm) !important;
+      box-shadow: var(--shadow-float) !important;
+      border: none !important;
+      font-family: inherit;
+    }
+    .layers-control-box a {
+      border-radius: var(--radius-sm) !important;
+    }
+
+    /* ── Logo-Marker (Firmen-Favicons) ── */
+    .company-logo-marker {
+      background: #fff;
+      border-radius: 50%;
+      border: 2px solid #fff;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+      object-fit: contain;
+    }
+
+    /* ── Hervorgehobener Marker: "Potentiell interessant" (Kontakt/eigene Suche = X) ──
+       Etwas größer und mit farbigem Rand, damit dieses subtile Signal auch
+       auf der Karte selbst erkennbar ist, ohne aufdringlich zu wirken. ── */
+    .company-logo-marker.marker-interesting {
+      border: 3px solid #c98a2c;
+      box-shadow: 0 1px 6px rgba(201, 138, 44, 0.55), 0 0 0 2px rgba(201, 138, 44, 0.18);
+    }
+
+    /* ── Popup ── */
+    .popup-inner {
+      min-width: 220px;
+      max-width: 280px;
+      line-height: 1.5;
+      font-size: 0.88rem;
+    }
+    .popup-inner .popup-name {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 3px;
+    }
+    .popup-inner .popup-branche {
+      display: inline-block;
+      background: var(--accent-soft);
+      color: var(--navy);
+      border-radius: var(--radius-sm);
+      padding: 1px 7px;
+      font-size: 0.78rem;
+      margin-bottom: 8px;
+    }
+    .popup-inner .popup-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 3px;
+      color: var(--text);
+    }
+    .popup-inner .popup-row span:first-child { flex-shrink: 0; }
+    .popup-inner a { color: var(--accent); text-decoration: none; }
+    .popup-inner a:hover { text-decoration: underline; }
+
+    .popup-badges-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-top: 8px;
+      margin-bottom: 4px;
+    }
+
+    .popup-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin: 8px 0;
+    }
+    .popup-badge {
+      font-size: 0.72rem;
+      padding: 2px 8px;
+      border-radius: 10px;
+      background: var(--surface-subtle);
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+    .popup-badge.active {
+      background: var(--navy);
+      color: #fff;
+    }
+
+    .popup-more-btn {
+      display: block;
+      width: 100%;
+      margin-top: 8px;
+      padding: 7px 0;
+      border: 1.5px solid var(--navy);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--navy);
+      font-size: 0.83rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .popup-more-btn:hover { background: var(--accent-soft); }
+
+    /* ── Detail Panel ── */
+    #detail-panel {
+      position: fixed;
+      top: 0;
+      right: -380px;
+      width: 360px;
+      max-width: 100vw;
+      height: 100%;
+      background: var(--surface);
+      box-shadow: -4px 0 16px rgba(0,0,0,0.18);
+      z-index: 2000;
+      transition: right 0.25s ease;
+      overflow-y: auto;
+      padding: 20px;
+    }
+    #detail-panel.open { right: 0; }
+
+    #detail-panel .panel-close {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      width: 30px;
+      height: 30px;
+      border: none;
+      background: var(--surface-subtle);
+      border-radius: 50%;
+      font-size: 1.1rem;
+      color: var(--text);
+      cursor: pointer;
+      line-height: 1;
+    }
+    #detail-panel .panel-close:hover { background: var(--border); }
+
+    #detail-panel .panel-name {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--navy);
+      margin: 6px 36px 4px 0;
+    }
+    #detail-panel .panel-branche {
+      display: inline-block;
+      background: var(--accent-soft);
+      color: var(--navy);
+      border-radius: var(--radius-sm);
+      padding: 2px 8px;
+      font-size: 0.8rem;
+      margin-bottom: 16px;
+    }
+
+    .panel-section {
+      margin-bottom: 18px;
+    }
+    .panel-section h3 {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    .panel-section-note {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin: -4px 0 8px;
+      line-height: 1.4;
+    }
+    .panel-row {
+      display: flex;
+      gap: 8px;
+      font-size: 0.9rem;
+      color: var(--text);
+      margin-bottom: 6px;
+      line-height: 1.4;
+    }
+    .panel-row span:first-child { flex-shrink: 0; width: 20px; }
+    .panel-row a { color: var(--accent); text-decoration: none; }
+    .panel-row a:hover { text-decoration: underline; }
+
+    .panel-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .panel-badge {
+      font-size: 0.78rem;
+      padding: 4px 11px;
+      border-radius: 12px;
+      background: var(--surface-subtle);
+      color: var(--text-muted);
+    }
+    .panel-badge.active {
+      background: var(--navy);
+      color: #fff;
+    }
+
+    .panel-multi-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .panel-multi-badge {
+      font-size: 0.78rem;
+      padding: 4px 11px;
+      border-radius: 12px;
+      font-weight: 600;
+    }
+
+    /* ── Notizen-Bereich im Detail-Panel ── */
+    .notes-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .note-item {
+      background: var(--surface-subtle);
+      border-radius: var(--radius-sm);
+      padding: 9px 11px;
+    }
+    .note-item-text {
+      font-size: 0.86rem;
+      color: var(--text);
+      line-height: 1.45;
+      white-space: pre-wrap;
+      margin-bottom: 6px;
+    }
+    .note-item-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .note-item-date {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+    .note-item-actions {
+      display: flex;
+      gap: 4px;
+    }
+    .note-item-actions button {
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 0.74rem;
+      cursor: pointer;
+      padding: 2px 7px;
+      border-radius: 4px;
+      transition: background 0.15s, color 0.15s;
+    }
+    .note-item-actions button:hover {
+      background: var(--border);
+      color: var(--text);
+    }
+    .note-item-actions button.note-delete-btn:hover {
+      color: #a33;
+    }
+    .note-empty {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+    .note-edit-textarea {
+      width: 100%;
+      border: 1px solid var(--border-strong, var(--border));
+      border-radius: var(--radius-sm);
+      padding: 7px 9px;
+      font-size: 0.86rem;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 56px;
+      margin-bottom: 6px;
+    }
+    .note-edit-actions {
+      display: flex;
+      gap: 6px;
+      justify-content: flex-end;
+    }
+    .note-edit-actions button {
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 5px 12px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .note-save-btn {
+      background: var(--navy);
+      color: #fff;
+    }
+    .note-cancel-btn {
+      background: var(--surface-subtle);
+      color: var(--text);
+    }
+    .note-add-form textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 10px;
+      font-size: 0.86rem;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 60px;
+      margin-bottom: 8px;
+    }
+    .note-add-btn {
+      width: 100%;
+      padding: 8px 0;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: var(--navy);
+      color: #fff;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .note-add-btn:hover { opacity: 0.9; }
+    .note-add-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .note-status {
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      margin-top: 6px;
+      min-height: 1em;
+    }
+    .note-status.error { color: #a33; }
+
+    #detail-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(22, 34, 61, 0.3);
+      z-index: 1999;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    #detail-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  </style>
+</head>
+<body>
+
+<div id="app-header">
+  <h1 data-i18n="appTitle">🏢 Unternehmenskarte</h1>
+  <div class="search-wrap">
+    <button id="search-toggle-btn" title="Suche">🔍</button>
+    <input type="text" id="search-input" data-i18n-placeholder="searchPlaceholder" placeholder="Suche in allen Feldern…" />
+  </div>
+  <div id="lang-toggle">
+    <button id="lang-de-btn" class="active" data-lang="de">DE</button>
+    <button id="lang-en-btn" data-lang="en">EN</button>
+  </div>
+  <span id="result-count"></span>
+</div>
+
+<div id="app-body">
+  <aside id="filter-sidebar">
+    <div class="filter-step">
+      <div class="filter-step-label" data-i18n="step01Label">Schritt 01</div>
+      <h2 class="filter-step-title" data-i18n="step01Title">Branche</h2>
+      <div class="badge-filter-wrap filter-step-wrap">
+        <button id="branche-filter-btn" class="multi-filter-btn step-filter-btn">
+          <span class="step-filter-icon">🏷️</span>
+          <span class="step-filter-label" data-i18n="branchePlaceholder">Branche wählen</span>
+          <span class="step-filter-chevron">▾</span>
+        </button>
+        <div id="branche-filter-dropdown" class="multi-filter-dropdown">
+          <input type="text" id="branche-search-input" class="multi-filter-search" data-i18n-placeholder="brancheSearchPlaceholder" placeholder="Branche suchen…">
+          <div id="branche-filter-options" class="multi-filter-options-scroll"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="filter-step">
+      <div class="filter-step-label" data-i18n="step02Label">Schritt 02</div>
+      <h2 class="filter-step-title" data-i18n="step02Title">Wo in der Region?</h2>
+      <div class="badge-filter-wrap filter-step-wrap">
+        <button id="standort-filter-btn" class="multi-filter-btn step-filter-btn">
+          <span class="step-filter-icon">📍</span>
+          <span class="step-filter-label" data-i18n="standortPlaceholder">Standort wählen</span>
+          <span class="step-filter-chevron">▾</span>
+        </button>
+        <div id="standort-filter-dropdown" class="multi-filter-dropdown">
+          <input type="text" id="standort-search-input" class="multi-filter-search" data-i18n-placeholder="standortSearchPlaceholder" placeholder="Ort suchen…">
+          <div id="standort-filter-options" class="multi-filter-options-scroll"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="filter-step">
+      <div class="filter-step-label" data-i18n="step03Label">Schritt 03</div>
+      <h2 class="filter-step-title" data-i18n="step03Title">Die Eckdaten</h2>
+
+      <div class="badge-filter-wrap filter-step-wrap">
+        <button id="badge-filter-btn" class="multi-filter-btn step-filter-btn">
+          <span class="step-filter-icon">🕓</span>
+          <span class="step-filter-label" data-i18n="aktivitaetenPlaceholder">Bisherige Aktivitäten</span>
+          <span class="step-filter-chevron">▾</span>
+        </button>
+        <div id="badge-filter-dropdown" class="multi-filter-dropdown">
+          <div class="multi-filter-dropdown-note" data-i18n="aktivitaetenNote">Zeigt, womit das Unternehmen in der Vergangenheit bereits dabei war – keine Aussage über aktuell laufende Angebote.</div>
+          <div class="badge-filter-toggle">
+            <span data-i18n="kombinationLabel">Kombination</span>
+            <div class="badge-filter-toggle-btn">
+              <button id="badge-mode-or" class="active" data-mode="or" data-i18n="oderLabel">ODER</button>
+              <button id="badge-mode-and" data-mode="and" data-i18n="undLabel">UND</button>
+            </div>
+          </div>
+          <div id="badge-filter-options"></div>
+        </div>
+      </div>
+
+      <div class="badge-filter-wrap filter-step-wrap">
+        <button id="fachbereich-filter-btn" class="multi-filter-btn step-filter-btn">
+          <span class="step-filter-icon">🎓</span>
+          <span class="step-filter-label" data-i18n="fachbereichePlaceholder">Fachbereiche</span>
+          <span class="step-filter-chevron">▾</span>
+        </button>
+        <div id="fachbereich-filter-dropdown" class="multi-filter-dropdown">
+          <div class="badge-filter-toggle">
+            <span data-i18n="kombinationLabel">Kombination</span>
+            <div class="badge-filter-toggle-btn">
+              <button id="fachbereich-mode-or" class="active" data-mode="or" data-i18n="oderLabel">ODER</button>
+              <button id="fachbereich-mode-and" data-mode="and" data-i18n="undLabel">UND</button>
+            </div>
+          </div>
+          <div id="fachbereich-filter-options" class="multi-filter-options-scroll"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="filter-sidebar-footer">
+      <button id="reset-btn" data-i18n="resetBtn">↻ Zurücksetzen</button>
+    </div>
+  </aside>
+
+  <div id="content-area">
+    <div id="map"></div>
+    <button id="sidebar-toggle-btn" title="Liste ein-/ausblenden">☰</button>
+
+    <div id="sidebar">
+      <div id="sidebar-header">
+        <span data-i18n="sidebarHeading">Unternehmen</span>
+        <button id="sidebar-close-btn" title="Liste ausblenden">✕</button>
+      </div>
+      <div id="sidebar-list"></div>
+    </div>
+  </div>
+</div>
+
+<div id="detail-overlay"></div>
+<div id="detail-panel">
+  <button class="panel-close" id="panel-close">✕</button>
+  <div id="panel-content"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  // ──────────────────────────────────────────
+  //  👉 HIER SUPABASE-INFOS
+  // ──────────────────────────────────────────
+  const SUPABASE_URL = "https://gmvodditiwpjlmjvrvec.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdtdm9kZGl0aXdwamxtanZydmVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1OTMxMzUsImV4cCI6MjA5NzE2OTEzNX0.DeZ-S9xsehxaYSzRnDMqSKAVaNp38xzYJg45fqlG6D8";
+  // ──────────────────────────────────────────
+
+  if (typeof window.supabase === 'undefined') {
+    console.error("Supabase-Bibliothek wurde nicht geladen! Mögliche Ursachen: Adblocker/Tracking-Schutz blockiert das CDN-Script, oder kein Internetzugriff.");
+    document.getElementById('map').innerHTML =
+      '<div style="padding:40px;text-align:center;color:#a33;font-family:sans-serif;">' +
+      '⚠ Supabase konnte nicht geladen werden.<br>Bitte Adblocker deaktivieren und Seite neu laden.</div>';
+    throw new Error('Supabase nicht verfügbar – Skript wird gestoppt.');
+  }
+
+  const { createClient } = window.supabase;
+  const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // ──────────────────────────────────────────
+  //  🌐 Sprach-System (DE/EN) — übersetzt nur feste Oberflächentexte.
+  //  Daten aus Supabase (Branche, Standorte, Notizen, etc.) bleiben unverändert,
+  //  da sie direkt aus der Datenbank stammen.
+  // ──────────────────────────────────────────
+  const I18N = {
+    de: {
+      appTitle: '🏢 Unternehmenskarte',
+      searchPlaceholder: 'Suche in allen Feldern…',
+      step01Label: 'Schritt 01',
+      step01Title: 'Branche',
+      branchePlaceholder: 'Branche wählen',
+      brancheSearchPlaceholder: 'Branche suchen…',
+      step02Label: 'Schritt 02',
+      step02Title: 'Wo in der Region?',
+      standortPlaceholder: 'Standort wählen',
+      standortSearchPlaceholder: 'Ort suchen…',
+      step03Label: 'Schritt 03',
+      step03Title: 'Die Eckdaten',
+      aktivitaetenPlaceholder: 'Bisherige Aktivitäten',
+      aktivitaetenNote: 'Zeigt, womit das Unternehmen in der Vergangenheit bereits dabei war – keine Aussage über aktuell laufende Angebote.',
+      kombinationLabel: 'Kombination',
+      oderLabel: 'ODER',
+      undLabel: 'UND',
+      fachbereichePlaceholder: 'Fachbereiche',
+      resetBtn: '↻ Zurücksetzen',
+      sidebarHeading: 'Unternehmen',
+      resultCount: (n) => `${n} Unternehmen`,
+      sidebarEmpty: 'Keine Unternehmen gefunden.',
+      keineTreffer: 'Keine Treffer',
+      keineAngaben: 'Keine Angaben',
+      mehrAnzeigen: 'Mehr anzeigen',
+      bisherigeAktivitaeten: 'Bisherige Aktivitäten',
+      kontakt: 'Kontakt',
+      standorte: 'Standorte',
+      gesuchteFachbereiche: 'Gesuchte Fachbereiche',
+      mitarbeitende: 'Mitarbeitende',
+      notizen: 'Notizen',
+      initiativbewerbungJa: '✓ Potentiell interessant',
+      notizenHeading: 'Notizen',
+      notizPlaceholder: 'Notiz hinzufügen…',
+      notizSpeichern: 'Speichern',
+      notizAbbrechen: 'Abbrechen',
+      notizBearbeiten: 'Bearbeiten',
+      notizLoeschen: 'Löschen',
+      notizLeer: 'Noch keine Notizen vorhanden.',
+      notizSpeichert: 'Wird gespeichert…',
+      notizFehler: 'Fehler beim Speichern. Bitte erneut versuchen.',
+      notizLoeschenBestaetigung: 'Diese Notiz wirklich löschen?',
+      panelAktivitaetenNote: 'Womit das Unternehmen in der Vergangenheit bereits dabei war – keine Aussage über aktuell laufende Angebote.',
+    },
+    en: {
+      appTitle: '🏢 Company Map',
+      searchPlaceholder: 'Search all fields…',
+      step01Label: 'Step 01',
+      step01Title: 'Industry',
+      branchePlaceholder: 'Select industry',
+      brancheSearchPlaceholder: 'Search industry…',
+      step02Label: 'Step 02',
+      step02Title: 'Where in the region?',
+      standortPlaceholder: 'Select location',
+      standortSearchPlaceholder: 'Search location…',
+      step03Label: 'Step 03',
+      step03Title: 'Key details',
+      aktivitaetenPlaceholder: 'Past activities',
+      aktivitaetenNote: 'Shows what the company has already taken part in previously – not an indication of currently active offers.',
+      kombinationLabel: 'Combination',
+      oderLabel: 'OR',
+      undLabel: 'AND',
+      fachbereichePlaceholder: 'Fields of study',
+      resetBtn: '↻ Reset',
+      sidebarHeading: 'Companies',
+      resultCount: (n) => `${n} companies`,
+      sidebarEmpty: 'No companies found.',
+      keineTreffer: 'No matches',
+      keineAngaben: 'No information',
+      mehrAnzeigen: 'Show more',
+      bisherigeAktivitaeten: 'Past activities',
+      kontakt: 'Contact',
+      standorte: 'Locations',
+      gesuchteFachbereiche: 'Fields of study sought',
+      mitarbeitende: 'Employees',
+      notizen: 'Notes',
+      initiativbewerbungJa: '✓ Potentially interesting',
+      notizenHeading: 'Notes',
+      notizPlaceholder: 'Add a note…',
+      notizSpeichern: 'Save',
+      notizAbbrechen: 'Cancel',
+      notizBearbeiten: 'Edit',
+      notizLoeschen: 'Delete',
+      notizLeer: 'No notes yet.',
+      notizSpeichert: 'Saving…',
+      notizFehler: 'Error saving. Please try again.',
+      notizLoeschenBestaetigung: 'Really delete this note?',
+      panelAktivitaetenNote: 'What the company has already taken part in previously – not an indication of currently active offers.',
+    },
+  };
+
+  // ── Anfangssprache aus Browser-Einstellung ableiten ──
+  function detectInitialLang() {
+    const navLang = (navigator.language || navigator.userLanguage || 'de').toLowerCase();
+    return navLang.startsWith('de') ? 'de' : 'en';
+  }
+
+  let currentLang = detectInitialLang();
+
+  function t(key, ...args) {
+    const entry = I18N[currentLang][key] ?? I18N.de[key];
+    return typeof entry === 'function' ? entry(...args) : entry;
+  }
+
+  // Wendet die aktuelle Sprache auf alle statischen [data-i18n] / [data-i18n-placeholder] Elemente an
+  function applyStaticTranslations() {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      if (I18N.de[key] !== undefined) el.textContent = t(key);
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      const key = el.getAttribute('data-i18n-placeholder');
+      if (I18N.de[key] !== undefined) el.placeholder = t(key);
+    });
+    document.documentElement.lang = currentLang;
+    document.getElementById('lang-de-btn').classList.toggle('active', currentLang === 'de');
+    document.getElementById('lang-en-btn').classList.toggle('active', currentLang === 'en');
+  }
+
+  // Karte initialisieren
+  if (typeof L === 'undefined') {
+    console.error("Leaflet (L) wurde nicht geladen! Mögliche Ursachen: Adblocker/Tracking-Schutz blockiert das CDN-Script, oder kein Internetzugriff.");
+    alert("Die Kartenbibliothek (Leaflet) konnte nicht geladen werden. Bitte Adblocker für diese Seite deaktivieren und neu laden.");
+  }
+
+  const map = L.map('map').setView([48.56, 13.43], 9);
+  // ── Kartenstile zur Auswahl ──
+  const lightLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 19,
+  });
+
+  const voyagerLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 19,
+  });
+
+  const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom: 19,
+  });
+
+  voyagerLayer.addTo(map);
+
+  const layersControl = L.control.layers({
+    'Voyager (bunt)': voyagerLayer,
+    'Positron (hell)': lightLayer,
+    'Standard OSM': osmLayer,
+  }).addTo(map);
+
+  // Eindeutige Klasse für die Leaflet-Layer-Schaltfläche, damit wir sie
+  // per CSS-Variable dynamisch neben die Sidebar/den Sidebar-Button setzen können.
+  layersControl.getContainer().classList.add('layers-control-box');
+
+  // Platzhalter-Koordinaten (keine echten Standorte)
+  const PLACEHOLDER_LAT = 51.4323195;
+  const PLACEHOLDER_LNG = 6.7707424;
+
+  let allData = [];
+  let activeMarkers = [];
+  let markersByIndex = new Map(); // Index in allData → Leaflet-Marker (für Sidebar-Klick)
+
+  // ── Hilfsfunktion: URL normalisieren ──
+  function normalizeUrl(url) {
+    if (!url) return null;
+    return url.startsWith('http') ? url : 'https://' + url;
+  }
+
+  // ── Hilfsfunktion: Domain aus einer URL extrahieren (für Favicon-Lookup) ──
+  function extractDomain(url) {
+    if (!url) return null;
+    try {
+      return new URL(normalizeUrl(url)).hostname.replace(/^www\./, '');
+    } catch {
+      return null;
+    }
+  }
+
+  // ── Hilfsfunktion: Buchstaben-Platzhalter-Farbe (stabil pro Firma) ──
+  const INITIAL_BADGE_COLORS = [
+    '#2b2f36', '#3a4a63', '#4a5d4a', '#6a4a3a', '#5a3a5a', '#3a5a5a', '#5a4a2a',
+  ];
+  function colorForInitial(name) {
+    let hash = 0;
+    const s = String(name || '');
+    for (let i = 0; i < s.length; i++) hash = (hash * 31 + s.charCodeAt(i)) >>> 0;
+    return INITIAL_BADGE_COLORS[hash % INITIAL_BADGE_COLORS.length];
+  }
+
+  // ── Favicon-Fallback-Kette ──
+  // Reihenfolge: 1) Favicon direkt von der Firmen-Webseite (/favicon.ico)
+  //              2) Google s2/favicons-Dienst
+  //              3) DuckDuckGo Icon-Dienst
+  // Erst wenn alle drei fehlschlagen, wird der Anfangsbuchstabe als Platzhalter verwendet.
+  function faviconCandidates(domain) {
+    if (!domain) return [];
+    return [
+      `https://${domain}/favicon.ico`,
+      `https://www.google.com/s2/favicons?sz=64&domain=${encodeURIComponent(domain)}`,
+      `https://icons.duckduckgo.com/ip3/${encodeURIComponent(domain)}.ico`,
+    ];
+  }
+
+  // Lädt die erste funktionierende URL aus einer Kandidatenliste (Promise).
+  // Löst mit der URL auf, oder mit null, falls keine funktioniert hat.
+  function loadFirstWorkingImage(urls) {
+    return new Promise(resolve => {
+      let i = 0;
+      function tryNext() {
+        if (i >= urls.length) { resolve(null); return; }
+        const url = urls[i++];
+        const img = new Image();
+        img.onload = () => {
+          // Google/DuckDuckGo liefern teils einen generischen 16x16-Platzhalter
+          // statt eines 404 — sehr kleine "Icons" daher überspringen.
+          if (img.naturalWidth > 8 && img.naturalHeight > 8) resolve(url);
+          else tryNext();
+        };
+        img.onerror = tryNext;
+        img.src = url;
+      }
+      tryNext();
+    });
+  }
+
+  // Baut ein rundes Buchstaben-Icon (Data-URL via SVG) als Logo-Ersatz.
+  function buildInitialIconUrl(name) {
+    const initial = String(name || '?').trim().charAt(0).toUpperCase() || '?';
+    const color = colorForInitial(name);
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64">
+      <circle cx="32" cy="32" r="32" fill="${color}"/>
+      <text x="32" y="32" text-anchor="middle" dominant-baseline="central"
+        font-family="Inter, Segoe UI, system-ui, sans-serif" font-size="28" font-weight="700" fill="#fff">${initial}</text>
+    </svg>`;
+    return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
+  }
+
+  // ── Hilfsfunktion: "X" in Badge-Status umwandeln ──
+  function isMarked(value) {
+    return !!(value && String(value).trim().toUpperCase() === 'X');
+  }
+
+  // ── Hilfsfunktion: ";"-getrennte Werte in eine saubere Liste splitten ──
+  function splitMultiValue(value) {
+    if (!value) return [];
+    return String(value)
+      .split(';')
+      .map(v => v.trim())
+      .filter(Boolean);
+  }
+
+  // ── Hilfsfunktion: "/"-getrennte Branchen in eine saubere Liste splitten ──
+  function splitBranche(value) {
+    if (!value) return [];
+    return String(value)
+      .split('/')
+      .map(v => v.trim())
+      .filter(Boolean);
+  }
+
+  // ── Farbpalette für Mehrfachwert-Badges (Standorte, Fachbereiche) ──
+  const MULTI_BADGE_COLORS = [
+    { bg: '#e8f0fe', fg: '#1a4d8f' }, // blau
+    { bg: '#e6f7ec', fg: '#1f7a45' }, // grün
+    { bg: '#fdeee6', fg: '#b5530f' }, // orange
+    { bg: '#f3e8fd', fg: '#6a2fa3' }, // lila
+    { bg: '#fde8ef', fg: '#a31256' }, // pink
+    { bg: '#fff6db', fg: '#8a6d00' }, // gelb/braun
+    { bg: '#e1f5f7', fg: '#0a6e78' }, // türkis
+  ];
+
+  // Stabile Farbzuordnung: gleicher Wert bekommt immer die gleiche Farbe,
+  // basierend auf einem einfachen Hash über den String.
+  function colorForValue(value) {
+    let hash = 0;
+    for (let i = 0; i < value.length; i++) {
+      hash = (hash * 31 + value.charCodeAt(i)) >>> 0;
+    }
+    return MULTI_BADGE_COLORS[hash % MULTI_BADGE_COLORS.length];
+  }
+
+  // Baut farbige Badges für eine getrennte Werteliste (z.B. Standorte, Branchen)
+  // splitter: Funktion zum Aufsplitten des Rohwerts (Standard: ";"-Trennung)
+  function buildMultiValueBadges(value, cssClass, splitter = splitMultiValue) {
+    const values = splitter(value);
+    if (values.length === 0) return '';
+    return values.map(v => {
+      const color = colorForValue(v);
+      return `<span class="${cssClass}" style="background:${color.bg};color:${color.fg}">${v}</span>`;
+    }).join('');
+  }
+
+  // ── Badge-Definitionen (Spalte → Anzeigename) ──
+  // Hinweis: Diese Felder dokumentieren VERGANGENE Aktivitäten
+  // (z.B. "war schon mal auf der Messe DEG"), keine aktuell laufenden Angebote.
+  const BADGE_FIELDS = [
+    { key: 'Messe DEG',              label: 'Messe DEG' },
+    { key: 'Messe ECRI',             label: 'Messe ECRI' },
+    { key: 'Praktika ECRI',          label: 'Praktika' },
+    { key: 'Projekte \nX\nGastvort. (X)', label: 'Projekte/Gastvortrag' },
+    { key: 'BA-/MA-Thesis',          label: 'BA-/MA-Thesis' },
+    { key: 'Duales Studium',         label: 'Duales Studium' },
+    { key: 'Auslandseinsatz',        label: 'Auslandseinsatz' },
+  ];
+
+  function buildBadges(c, cssClass) {
+    const active = BADGE_FIELDS.filter(f => isMarked(c[f.key]));
+    if (active.length === 0) {
+      return `<span class="${cssClass}">${t('keineAngaben')}</span>`;
+    }
+    return active.map(f =>
+      `<span class="${cssClass} active">✓ ${f.label}</span>`
+    ).join('');
+  }
+
+  // ── Kompaktes Popup (Basis-Infos) ──
+  function buildPopup(c, index) {
+    return `
+      <div class="popup-inner">
+        <div class="popup-name">${c['Unternehmen'] ?? ''}</div>
+        ${c['Branche'] ? `<div class="popup-badges" style="margin-bottom:6px">${buildMultiValueBadges(c['Branche'], 'popup-badge', splitBranche)}</div>` : ''}
+        ${(c['Adresse'] || c['Standorte']) ? `<div class="popup-row"><span>📍</span><span>${c['Adresse'] ?? c['Standorte']}</span></div>` : ''}
+        ${c['Telefon'] ? `<div class="popup-row"><span>📞</span><span>${c['Telefon']}</span></div>` : ''}
+        <div class="popup-badges-label">${t('bisherigeAktivitaeten')}</div>
+        <div class="popup-badges">${buildBadges(c, 'popup-badge')}</div>
+        <button class="popup-more-btn" onclick="openDetailPanel(${index})">${t('mehrAnzeigen')}</button>
+      </div>
+    `;
+  }
+
+  // ── Ausführliches Detail-Panel ──
+  function buildPanel(c) {
+    const website = c['Webseite']
+      ? `<a href="${normalizeUrl(c['Webseite'])}" target="_blank">${c['Webseite']}</a>`
+      : null;
+    const email = c['EMail']
+      ? `<a href="mailto:${c['EMail']}">${c['EMail']}</a>`
+      : null;
+
+    return `
+      <div class="panel-name">${c['Unternehmen'] ?? ''}</div>
+      ${c['Branche'] ? `<div class="panel-multi-badges" style="margin-bottom:16px">${buildMultiValueBadges(c['Branche'], 'panel-multi-badge', splitBranche)}</div>` : ''}
+
+      <div class="panel-section">
+        <h3>${t('kontakt')}</h3>
+        ${(c['Adresse'] || c['Standorte']) ? `<div class="panel-row"><span>📍</span><span>${c['Adresse'] ?? c['Standorte']}</span></div>` : ''}
+        ${c['Telefon'] ? `<div class="panel-row"><span>📞</span><span>${c['Telefon']}</span></div>` : ''}
+        ${email ? `<div class="panel-row"><span>✉️</span><span>${email}</span></div>` : ''}
+        ${website ? `<div class="panel-row"><span>🌐</span><span>${website}</span></div>` : ''}
+        ${c['Kontaktperson'] ? `<div class="panel-row"><span>👤</span><span>${c['Kontaktperson']}</span></div>` : ''}
+        ${/* c['Erreichbarkeit'] ? `<div class="panel-row"><span>📶</span><span>${c['Erreichbarkeit']}</span></div>` : '' */ ''}
+      </div>
+
+      ${c['Standorte'] ? `
+      <div class="panel-section">
+        <h3>${t('standorte')}</h3>
+        <div class="panel-multi-badges">${buildMultiValueBadges(c['Standorte'], 'panel-multi-badge')}</div>
+      </div>` : ''}
+
+      ${(c['Gesuchte Fachbereiche und Studiengänge'] || c['MA']) ? `
+      <div class="panel-section">
+        <h3>${t('gesuchteFachbereiche')}</h3>
+        ${c['Gesuchte Fachbereiche und Studiengänge'] ? `<div class="panel-multi-badges">${buildMultiValueBadges(c['Gesuchte Fachbereiche und Studiengänge'], 'panel-multi-badge')}</div>` : ''}
+        ${c['MA'] ? `<div class="panel-row" style="margin-top:8px"><span>👥</span><span>${c['MA']} ${t('mitarbeitende')}</span></div>` : ''}
+      </div>` : ''}
+
+      <div class="panel-section">
+        <h3>${t('bisherigeAktivitaeten')}</h3>
+        <div class="panel-section-note">${t('panelAktivitaetenNote')}</div>
+        <div class="panel-badges">
+          ${buildBadges(c, 'panel-badge')}
+          ${isMarked(c['Kontakt / eigene Suche']) ? `<span class="panel-badge active">${t('initiativbewerbungJa')}</span>` : ''}
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <h3>${t('notizenHeading')}</h3>
+        <div id="notes-container" data-unternehmen-id="${c.id}">
+          <div class="notes-list" id="notes-list"><!-- per JS befüllt --></div>
+          <div class="note-add-form">
+            <textarea id="note-new-text" placeholder="${t('notizPlaceholder')}"></textarea>
+            <button class="note-add-btn" id="note-add-btn">${t('notizSpeichern')}</button>
+            <div class="note-status" id="note-status"></div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // ──────────────────────────────────────────
+  //  📝 Notizen-Funktion (Supabase-Tabelle "notizen")
+  //  Spalten: id, unternehmen_id (FK auf Unternehmen_neu.id), text, created_at, updated_at
+  // ──────────────────────────────────────────
+  function formatNoteDate(iso) {
+    try {
+      const d = new Date(iso);
+      return d.toLocaleString(currentLang === 'de' ? 'de-DE' : 'en-GB', {
+        day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
+      });
+    } catch {
+      return '';
+    }
+  }
+
+  function escapeHtml(s) {
+    return String(s ?? '')
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  async function loadNotesForCompany(unternehmenId) {
+    const { data, error } = await db
+      .from('notizen')
+      .select('*')
+      .eq('unternehmen_id', unternehmenId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Fehler beim Laden der Notizen:', error.message);
+      return [];
+    }
+    return data || [];
+  }
+
+  function renderNotesList(notes) {
+    const list = document.getElementById('notes-list');
+    if (!list) return;
+
+    if (notes.length === 0) {
+      list.innerHTML = `<div class="note-empty">${t('notizLeer')}</div>`;
+      return;
+    }
+
+    list.innerHTML = notes.map(n => `
+      <div class="note-item" data-note-id="${n.id}">
+        <div class="note-item-text" data-note-text>${escapeHtml(n.text)}</div>
+        <div class="note-item-meta">
+          <span class="note-item-date">${formatNoteDate(n.created_at)}</span>
+          <span class="note-item-actions">
+            <button class="note-edit-btn" data-note-id="${n.id}">${t('notizBearbeiten')}</button>
+            <button class="note-delete-btn" data-note-id="${n.id}">${t('notizLoeschen')}</button>
+          </span>
+        </div>
+      </div>
+    `).join('');
+
+    list.querySelectorAll('.note-edit-btn').forEach(btn => {
+      btn.addEventListener('click', () => startEditNote(btn.dataset.noteId));
+    });
+    list.querySelectorAll('.note-delete-btn').forEach(btn => {
+      btn.addEventListener('click', () => deleteNote(btn.dataset.noteId));
+    });
+  }
+
+  async function refreshNotes(unternehmenId) {
+    const notes = await loadNotesForCompany(unternehmenId);
+    renderNotesList(notes);
+  }
+
+  function setNoteStatus(msg, isError = false) {
+    const el = document.getElementById('note-status');
+    if (!el) return;
+    el.textContent = msg || '';
+    el.classList.toggle('error', !!isError);
+  }
+
+  async function addNote(unternehmenId) {
+    const textarea = document.getElementById('note-new-text');
+    const text = textarea.value.trim();
+    if (!text) return;
+
+    const addBtn = document.getElementById('note-add-btn');
+    addBtn.disabled = true;
+    setNoteStatus(t('notizSpeichert'));
+
+    const { error } = await db.from('notizen').insert({
+      unternehmen_id: unternehmenId,
+      text,
+    });
+
+    addBtn.disabled = false;
+
+    if (error) {
+      console.error('Fehler beim Speichern der Notiz:', error.message);
+      setNoteStatus(t('notizFehler'), true);
+      return;
+    }
+
+    textarea.value = '';
+    setNoteStatus('');
+    await refreshNotes(unternehmenId);
+  }
+
+  function startEditNote(noteId) {
+    const item = document.querySelector(`.note-item[data-note-id="${noteId}"]`);
+    if (!item) return;
+    const textEl = item.querySelector('[data-note-text]');
+    const currentText = textEl.textContent;
+
+    item.innerHTML = `
+      <textarea class="note-edit-textarea">${escapeHtml(currentText)}</textarea>
+      <div class="note-edit-actions">
+        <button class="note-cancel-btn" data-note-id="${noteId}">${t('notizAbbrechen')}</button>
+        <button class="note-save-btn" data-note-id="${noteId}">${t('notizSpeichern')}</button>
+      </div>
+    `;
+
+    item.querySelector('.note-cancel-btn').addEventListener('click', () => {
+      const unternehmenId = document.getElementById('notes-container').dataset.unternehmenId;
+      refreshNotes(unternehmenId);
+    });
+    item.querySelector('.note-save-btn').addEventListener('click', () => saveEditedNote(noteId));
+  }
+
+  async function saveEditedNote(noteId) {
+    const item = document.querySelector(`.note-item[data-note-id="${noteId}"]`);
+    const textarea = item.querySelector('.note-edit-textarea');
+    const newText = textarea.value.trim();
+    if (!newText) return;
+
+    const { error } = await db
+      .from('notizen')
+      .update({ text: newText, updated_at: new Date().toISOString() })
+      .eq('id', noteId);
+
+    if (error) {
+      console.error('Fehler beim Bearbeiten der Notiz:', error.message);
+      setNoteStatus(t('notizFehler'), true);
+      return;
+    }
+
+    const unternehmenId = document.getElementById('notes-container').dataset.unternehmenId;
+    await refreshNotes(unternehmenId);
+  }
+
+  async function deleteNote(noteId) {
+    if (!confirm(t('notizLoeschenBestaetigung'))) return;
+
+    const { error } = await db.from('notizen').delete().eq('id', noteId);
+
+    if (error) {
+      console.error('Fehler beim Löschen der Notiz:', error.message);
+      setNoteStatus(t('notizFehler'), true);
+      return;
+    }
+
+    const unternehmenId = document.getElementById('notes-container').dataset.unternehmenId;
+    await refreshNotes(unternehmenId);
+  }
+
+  // ── Detail-Panel öffnen/schließen ──
+  window.openDetailPanel = function(index) {
+    const c = allData[index];
+    document.getElementById('panel-content').innerHTML = buildPanel(c);
+    document.getElementById('detail-panel').classList.add('open');
+    document.getElementById('detail-overlay').classList.add('open');
+
+    // Notizen für dieses Unternehmen laden und den "Hinzufügen"-Button verdrahten
+    const unternehmenId = c.id;
+    refreshNotes(unternehmenId);
+    document.getElementById('note-add-btn').addEventListener('click', () => addNote(unternehmenId));
+    document.getElementById('note-new-text').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) addNote(unternehmenId);
+    });
+  };
+
+  function closeDetailPanel() {
+    document.getElementById('detail-panel').classList.remove('open');
+    document.getElementById('detail-overlay').classList.remove('open');
+  }
+
+  document.getElementById('panel-close').addEventListener('click', closeDetailPanel);
+  document.getElementById('detail-overlay').addEventListener('click', closeDetailPanel);
+
+  // ── Volltextsuche: alle Felder prüfen ──
+  function matchesSearch(c, query) {
+    if (!query) return true;
+    const q = query.toLowerCase();
+    return Object.values(c).some(val => val && String(val).toLowerCase().includes(q));
+  }
+
+  // ── Generische Mehrfachauswahl-Filter (Bisherige Aktivitäten & Fachbereiche) ──
+  // Erzeugt einen unabhängigen Filter-Zustand mit UND/ODER-Logik und
+  // verdrahtet Dropdown, Checkboxen und Toggle-Buttons automatisch.
+  function createMultiFilter(config) {
+    const state = {
+      mode: config.fixedMode || 'or',   // 'or' oder 'and' (oder fest, falls kein Toggle)
+      selected: new Set(),
+    };
+
+    function matches(c) {
+      if (state.selected.size === 0) return true;
+      const values = [...state.selected];
+      if (state.mode === 'and') {
+        return values.every(v => config.hasValue(c, v));
+      }
+      return values.some(v => config.hasValue(c, v));
+    }
+
+    function updateButtonLabel() {
+      const btn = document.getElementById(config.btnId);
+      const count = state.selected.size;
+      const labelEl = btn.querySelector('.step-filter-label');
+      const text = count > 0 ? `${config.label} (${count})` : config.placeholder || `${config.label} wählen`;
+
+      if (labelEl) {
+        labelEl.textContent = text;
+      } else {
+        btn.textContent = count > 0 ? `${config.label} (${count}) ▾` : `${config.label} ▾`;
+      }
+      btn.classList.toggle('has-selection', count > 0);
+    }
+
+    function populateOptions(options) {
+      const container = document.getElementById(config.optionsId);
+      container.innerHTML = options.map(opt => `
+        <label class="badge-filter-option">
+          <input type="checkbox" value="${opt.value.replace(/"/g, '&quot;')}">
+          <span>${opt.label}</span>
+        </label>
+      `).join('');
+
+      container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+        cb.addEventListener('change', () => {
+          if (cb.checked) {
+            state.selected.add(cb.value);
+          } else {
+            state.selected.delete(cb.value);
+          }
+          updateButtonLabel();
+          renderMarkers();
+        });
+      });
+
+      // Falls ein Suchfeld konfiguriert ist: aktuellen Suchtext erneut anwenden,
+      // damit die Liste nach Neuaufbau (z.B. neue Daten) weiter gefiltert bleibt.
+      if (config.searchInputId) {
+        filterOptionsBySearch(document.getElementById(config.searchInputId).value);
+      }
+    }
+
+    function filterOptionsBySearch(query) {
+      const container = document.getElementById(config.optionsId);
+      const q = query.trim().toLowerCase();
+      let anyVisible = false;
+
+      container.querySelectorAll('.badge-filter-option').forEach(label => {
+        const text = label.textContent.trim().toLowerCase();
+        const visible = !q || text.includes(q);
+        label.classList.toggle('is-hidden', !visible);
+        if (visible) anyVisible = true;
+      });
+
+      // "Keine Treffer"-Hinweis verwalten
+      let emptyMsg = container.querySelector('.multi-filter-empty');
+      if (!anyVisible) {
+        if (!emptyMsg) {
+          emptyMsg = document.createElement('div');
+          emptyMsg.className = 'multi-filter-empty';
+          emptyMsg.textContent = t('keineTreffer');
+          container.appendChild(emptyMsg);
+        }
+      } else if (emptyMsg) {
+        emptyMsg.remove();
+      }
+    }
+
+    function reset() {
+      state.selected.clear();
+      state.mode = config.fixedMode || 'or';
+      document.querySelectorAll(`#${config.optionsId} input[type="checkbox"]`).forEach(cb => cb.checked = false);
+      if (config.modeOrId) {
+        document.getElementById(config.modeOrId).classList.add('active');
+        document.getElementById(config.modeAndId).classList.remove('active');
+      }
+      if (config.searchInputId) {
+        document.getElementById(config.searchInputId).value = '';
+        filterOptionsBySearch('');
+      }
+      updateButtonLabel();
+    }
+
+    // Dropdown öffnen/schließen (alle anderen werden dabei automatisch geschlossen)
+    document.getElementById(config.btnId).addEventListener('click', (e) => {
+      e.stopPropagation();
+      const dropdown = document.getElementById(config.dropdownId);
+      const willOpen = !dropdown.classList.contains('open');
+      document.querySelectorAll('.multi-filter-dropdown.open').forEach(d => d.classList.remove('open'));
+      if (willOpen) dropdown.classList.add('open');
+    });
+
+    // UND/ODER Toggle (nur falls konfiguriert)
+    if (config.modeOrId && config.modeAndId) {
+      document.getElementById(config.modeOrId).addEventListener('click', () => {
+        state.mode = 'or';
+        document.getElementById(config.modeOrId).classList.add('active');
+        document.getElementById(config.modeAndId).classList.remove('active');
+        renderMarkers();
+      });
+      document.getElementById(config.modeAndId).addEventListener('click', () => {
+        state.mode = 'and';
+        document.getElementById(config.modeAndId).classList.add('active');
+        document.getElementById(config.modeOrId).classList.remove('active');
+        renderMarkers();
+      });
+    }
+
+    // Suchfeld im Dropdown (nur falls konfiguriert)
+    if (config.searchInputId) {
+      document.getElementById(config.searchInputId).addEventListener('input', (e) => {
+        filterOptionsBySearch(e.target.value);
+      });
+      // Klick ins Suchfeld soll das Dropdown nicht schließen
+      document.getElementById(config.searchInputId).addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+    }
+
+    return { matches, populateOptions, reset, refreshLabel: updateButtonLabel, dropdownId: config.dropdownId };
+  }
+
+  // ── Bisherige-Aktivitäten-Filter (Messe/Praktika/Thesis/etc., feste Liste) ──
+  // Wichtig: Diese Werte dokumentieren VERGANGENE Aktivitäten, keine
+  // aktuell laufenden Angebote. Label, Platzhalter und Dropdown-Hinweistext
+  // stellen das bewusst klar (s. HTML + Dropdown-Note oben).
+  const moeglichkeitenFilter = createMultiFilter({
+    btnId: 'badge-filter-btn',
+    dropdownId: 'badge-filter-dropdown',
+    optionsId: 'badge-filter-options',
+    modeOrId: 'badge-mode-or',
+    modeAndId: 'badge-mode-and',
+    get label() { return t('aktivitaetenPlaceholder'); },
+    get placeholder() { return t('aktivitaetenPlaceholder'); },
+    hasValue: (c, key) => isMarked(c[key]),
+  });
+
+  // ── Fachbereiche-Filter (dynamische Liste aus ";"-getrennten Werten) ──
+  const fachbereichFilter = createMultiFilter({
+    btnId: 'fachbereich-filter-btn',
+    dropdownId: 'fachbereich-filter-dropdown',
+    optionsId: 'fachbereich-filter-options',
+    modeOrId: 'fachbereich-mode-or',
+    modeAndId: 'fachbereich-mode-and',
+    get label() { return t('fachbereichePlaceholder'); },
+    get placeholder() { return t('fachbereichePlaceholder'); },
+    hasValue: (c, value) => splitMultiValue(c['Gesuchte Fachbereiche und Studiengänge']).includes(value),
+  });
+
+  // ── Standort-Filter (dynamische Liste aus ";"-getrennten Werten, mit Suche, fest ODER) ──
+  const standortFilter = createMultiFilter({
+    btnId: 'standort-filter-btn',
+    dropdownId: 'standort-filter-dropdown',
+    optionsId: 'standort-filter-options',
+    searchInputId: 'standort-search-input',
+    fixedMode: 'or',
+    get label() { return t('step02Title'); },
+    get placeholder() { return t('standortPlaceholder'); },
+    hasValue: (c, value) => splitMultiValue(c['Standorte']).includes(value),
+  });
+
+  // ── Branchen-Filter (dynamische Liste aus "/"-getrennten Werten, mit Suche, fest ODER) ──
+  const brancheFilter = createMultiFilter({
+    btnId: 'branche-filter-btn',
+    dropdownId: 'branche-filter-dropdown',
+    optionsId: 'branche-filter-options',
+    searchInputId: 'branche-search-input',
+    fixedMode: 'or',
+    get label() { return t('step01Title'); },
+    get placeholder() { return t('branchePlaceholder'); },
+    hasValue: (c, value) => splitBranche(c['Branche']).includes(value),
+  });
+
+  // Dropdowns schließen, wenn außerhalb geklickt wird
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.badge-filter-wrap')) {
+      document.querySelectorAll('.multi-filter-dropdown.open').forEach(d => d.classList.remove('open'));
+    }
+  });
+
+  // ── Marker rendern ──
+  function renderMarkers() {
+    const query = document.getElementById('search-input').value.trim();
+
+    // Alte Marker entfernen
+    activeMarkers.forEach(m => map.removeLayer(m));
+    activeMarkers = [];
+    markersByIndex.clear();
+
+    const visibleIndices = [];
+
+    allData.forEach((c, index) => {
+      if (!matchesSearch(c, query)) return;
+      if (!brancheFilter.matches(c)) return;
+      if (!standortFilter.matches(c)) return;
+      if (!moeglichkeitenFilter.matches(c)) return;
+      if (!fachbereichFilter.matches(c)) return;
+
+      const lat = parseFloat(c.latitude);
+      const lng = parseFloat(c.longitude);
+      if (isNaN(lat) || isNaN(lng)) return;
+      if (lat === PLACEHOLDER_LAT && lng === PLACEHOLDER_LNG) return;
+
+      // Marker sofort mit Buchstaben-Platzhalter anzeigen (kein Warten auf Netzwerk),
+      // danach im Hintergrund auf das beste verfügbare Favicon umschalten.
+      const isInteresting = isMarked(c['Kontakt / eigene Suche']);
+      const markerSize = isInteresting ? 38 : 30;
+      const markerClass = 'company-logo-marker' + (isInteresting ? ' marker-interesting' : '');
+
+      const placeholderIcon = L.icon({
+        iconUrl: buildInitialIconUrl(c['Unternehmen']),
+        iconSize: [markerSize, markerSize],
+        iconAnchor: [markerSize / 2, markerSize / 2],
+        popupAnchor: [0, -markerSize / 2],
+        className: markerClass,
+      });
+
+      const marker = L.marker([lat, lng], { icon: placeholderIcon })
+        .addTo(map)
+        .bindPopup(buildPopup(c, index), { maxWidth: 300 });
+
+      const domain = extractDomain(c['Webseite']);
+      if (domain) {
+        loadFirstWorkingImage(faviconCandidates(domain)).then(workingUrl => {
+          if (!workingUrl) return;
+          marker.setIcon(L.icon({
+            iconUrl: workingUrl,
+            iconSize: [markerSize, markerSize],
+            iconAnchor: [markerSize / 2, markerSize / 2],
+            popupAnchor: [0, -markerSize / 2],
+            className: markerClass,
+          }));
+        });
+      }
+
+      activeMarkers.push(marker);
+      markersByIndex.set(index, marker);
+      visibleIndices.push(index);
+    });
+
+    document.getElementById('result-count').textContent = t('resultCount', activeMarkers.length);
+
+    renderSidebarList(visibleIndices);
+  }
+
+  // ── Sidebar: Liste der aktuell gefilterten Unternehmen ──
+  function renderSidebarList(visibleIndices) {
+    const container = document.getElementById('sidebar-list');
+
+    if (visibleIndices.length === 0) {
+      container.innerHTML = `<div class="sidebar-empty">${t('sidebarEmpty')}</div>`;
+      return;
+    }
+
+    // Alphabetisch sortieren für eine übersichtliche Liste
+    const sorted = [...visibleIndices].sort((a, b) =>
+      (allData[a]['Unternehmen'] ?? '').localeCompare(allData[b]['Unternehmen'] ?? '', 'de')
+    );
+
+    container.innerHTML = sorted.map(index => {
+      const c = allData[index];
+      const meta = [c['Branche'], c['Standorte']].filter(Boolean).join(' · ');
+      const name = c['Unternehmen'] ?? '';
+      const domain = extractDomain(c['Webseite']);
+      const candidates = faviconCandidates(domain);
+      const logoClass = 'sidebar-item-logo' + (isMarked(c['Kontakt / eigene Suche']) ? ' logo-interesting' : '');
+
+      const logoHtml = candidates.length > 0
+        ? `<img class="${logoClass}" src="${candidates[0]}" data-fallback-index="0" data-company="${name.replace(/"/g, '&quot;')}"
+              alt="" onerror="window.__handleFaviconError(this, ${JSON.stringify(candidates).replace(/"/g, '&quot;')})">`
+        : `<img class="${logoClass}" src="${buildInitialIconUrl(name)}" alt="">`;
+
+      return `
+        <div class="sidebar-item" data-index="${index}">
+          ${logoHtml}
+          <div class="sidebar-item-text">
+            <div class="sidebar-item-name">${name}</div>
+            ${meta ? `<div class="sidebar-item-meta">${meta}</div>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    container.querySelectorAll('.sidebar-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const index = parseInt(item.dataset.index, 10);
+        focusCompanyOnMap(index);
+      });
+    });
+  }
+
+  // ── Favicon-Fallback-Kette für <img onerror> (Sidebar-Liste) ──
+  // Probiert die nächste Kandidaten-URL; ist die Liste erschöpft, wird
+  // auf den Anfangsbuchstaben (SVG-Data-URL) umgeschaltet.
+  window.__handleFaviconError = function(imgEl, candidates) {
+    const nextIndex = parseInt(imgEl.dataset.fallbackIndex || '0', 10) + 1;
+    if (nextIndex < candidates.length) {
+      imgEl.dataset.fallbackIndex = String(nextIndex);
+      imgEl.src = candidates[nextIndex];
+    } else {
+      imgEl.removeAttribute('onerror');
+      imgEl.src = buildInitialIconUrl(imgEl.dataset.company || '?');
+    }
+  };
+
+  // ── Karte zu einem Unternehmen zentrieren und Popup öffnen ──
+  function focusCompanyOnMap(index) {
+    const marker = markersByIndex.get(index);
+    if (!marker) return;
+
+    map.setView(marker.getLatLng(), Math.max(map.getZoom(), 12));
+    marker.openPopup();
+
+    document.querySelectorAll('.sidebar-item').forEach(el => {
+      el.classList.toggle('active', parseInt(el.dataset.index, 10) === index);
+    });
+  }
+
+  // ── Dropdowns befüllen ──
+  function populateDropdowns(data) {
+    // Branchen: Werte aus "/"-getrennten Strings aufsplitten und deduplizieren
+    const branchenSet = new Set();
+    data.forEach(c => splitBranche(c['Branche']).forEach(b => branchenSet.add(b)));
+    const branchen = [...branchenSet].sort();
+
+    // Standorte: Werte aus ";"-getrennten Strings aufsplitten und deduplizieren
+    const standorteSet = new Set();
+    data.forEach(c => splitMultiValue(c['Standorte']).forEach(s => standorteSet.add(s)));
+    const standorte = [...standorteSet].sort();
+
+    // Fachbereiche: ebenso aus ";"-getrennten Strings aufsplitten
+    const fachbereicheSet = new Set();
+    data.forEach(c => splitMultiValue(c['Gesuchte Fachbereiche und Studiengänge']).forEach(f => fachbereicheSet.add(f)));
+    const fachbereiche = [...fachbereicheSet].sort();
+
+    brancheFilter.populateOptions(branchen.map(b => ({ value: b, label: b })));
+    standortFilter.populateOptions(standorte.map(s => ({ value: s, label: s })));
+    moeglichkeitenFilter.populateOptions(BADGE_FIELDS.map(f => ({ value: f.key, label: f.label })));
+    fachbereichFilter.populateOptions(fachbereiche.map(f => ({ value: f, label: f })));
+  }
+
+  // ── Daten laden ──
+  async function loadCompanies() {
+    const { data, error } = await db.from('Unternehmen_neu').select('*');
+
+    if (error) {
+      console.error("Supabase Fehler:", error.message);
+      alert("Fehler beim Laden: " + error.message);
+      return;
+    }
+
+    allData = data;
+    populateDropdowns(data);
+    renderMarkers();
+  }
+
+  // ── Event Listener ──
+  document.getElementById('search-input').addEventListener('input', renderMarkers);
+
+  // ── Such-Lupe: Eingabefeld ein-/ausklappen ──
+  const searchInput = document.getElementById('search-input');
+  const searchToggleBtn = document.getElementById('search-toggle-btn');
+
+  function openSearch() {
+    searchInput.classList.add('open');
+    searchToggleBtn.classList.add('active');
+    searchInput.focus();
+  }
+
+  function closeSearch() {
+    searchInput.classList.remove('open');
+    searchToggleBtn.classList.remove('active');
+  }
+
+  searchToggleBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (searchInput.classList.contains('open')) {
+      // Bereits offen: bei leerem Feld schließen, sonst nur fokussieren
+      if (!searchInput.value.trim()) {
+        closeSearch();
+      } else {
+        searchInput.focus();
+      }
+    } else {
+      openSearch();
+    }
+  });
+
+  searchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      searchInput.value = '';
+      renderMarkers();
+      closeSearch();
+    }
+  });
+
+  // Außerhalb klicken: Suchfeld nur schließen, wenn es leer ist
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.search-wrap') && !searchInput.value.trim()) {
+      closeSearch();
+    }
+  });
+
+  document.getElementById('reset-btn').addEventListener('click', () => {
+    document.getElementById('search-input').value = '';
+    closeSearch();
+    brancheFilter.reset();
+    standortFilter.reset();
+    moeglichkeitenFilter.reset();
+    fachbereichFilter.reset();
+    renderMarkers();
+  });
+
+  // ── Sidebar ein-/ausklappen ──
+  // Die Sidebar schwebt über der Karte, daher ändert sich die Kartengröße
+  // nicht mehr beim Auf-/Zuklappen – kein invalidateSize() nötig.
+  // Der Leaflet-Layer-Schalter (oben rechts) wird hier ebenfalls dynamisch
+  // verschoben, damit er sich nie mit der Sidebar oder ihrem Auf-Knopf überlappt.
+  const SIDEBAR_WIDTH = 320;
+  const SIDEBAR_GAP = 14;
+  const TOGGLE_BTN_WIDTH = 36;
+
+  function setSidebarOpen(open) {
+    document.getElementById('sidebar').classList.toggle('collapsed', !open);
+    document.getElementById('sidebar-toggle-btn').classList.toggle('visible', !open);
+
+    const root = document.documentElement.style;
+    if (open) {
+      // Layer-Schalter links von der offenen Sidebar platzieren
+      root.setProperty('--layers-control-right', `${SIDEBAR_GAP + SIDEBAR_WIDTH + SIDEBAR_GAP}px`);
+    } else {
+      // Sidebar zu: Layer-Schalter links vom kleinen ☰-Button platzieren
+      root.setProperty('--layers-control-right', `${SIDEBAR_GAP + TOGGLE_BTN_WIDTH + 10}px`);
+    }
+  }
+
+  document.getElementById('sidebar-toggle-btn').addEventListener('click', () => setSidebarOpen(true));
+  document.getElementById('sidebar-close-btn').addEventListener('click', () => setSidebarOpen(false));
+
+  // ── Sprach-Toggle: DE/EN umschalten ──
+  function setLanguage(lang) {
+    if (lang !== 'de' && lang !== 'en') return;
+    currentLang = lang;
+    applyStaticTranslations();
+    // Filter-Button-Beschriftungen aktualisieren (zeigen ggf. Auswahlzahl + Label in neuer Sprache)
+    brancheFilter.refreshLabel();
+    standortFilter.refreshLabel();
+    moeglichkeitenFilter.refreshLabel();
+    fachbereichFilter.refreshLabel();
+    // Karte, Popups, Sidebar-Liste neu rendern, damit alle dynamischen Texte aktualisiert werden
+    renderMarkers();
+  }
+
+  document.getElementById('lang-de-btn').addEventListener('click', () => setLanguage('de'));
+  document.getElementById('lang-en-btn').addEventListener('click', () => setLanguage('en'));
+
+  // Initiale Sprache anwenden (aus Browser-Einstellung erkannt)
+  applyStaticTranslations();
+
+  // Initiale Position setzen (Sidebar startet offen)
+  setSidebarOpen(true);
+
+  loadCompanies();
+</script>
+</body>
+</html>
