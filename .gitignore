@@ -1,7 +1,4 @@
-venv
-/venv
+
 \venv
-venv/
-test.html
-redesign-test.html
-redesign.html
+
+\test.html
