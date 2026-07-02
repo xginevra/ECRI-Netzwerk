@@ -1038,6 +1038,12 @@
     <button id="lang-en-btn" data-lang="en">EN</button>
   </div>
   <button id="admin-login-btn" class="multi-filter-btn" title="Admin-Login">🔒 Admin</button>
+  <a id="admin-panel-btn" href="admin.html"
+     style="display:none;border:1px solid #ffffff3a;background:transparent;color:#fff;
+            padding:6px 14px;border-radius:6px;font-size:0.82rem;text-decoration:none;
+            font-weight:500;white-space:nowrap;transition:background 0.15s;"
+     onmouseover="this.style.background='#ffffff14'"
+     onmouseout="this.style.background='transparent'">Admin-Panel →</a>
   <span id="result-count"></span>
 </div>
 
@@ -1752,11 +1758,18 @@
   }
 
   async function loadNotesForCompany(unternehmenId) {
-    const { data, error } = await db
+    let query = db
       .from('notizen')
       .select('*')
       .eq('unternehmen_id', unternehmenId)
       .order('created_at', { ascending: false });
+
+    // Nicht-Admins sehen nur freigegebene Notizen
+    if (!isAdmin) {
+      query = query.eq('approved', true);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error('Fehler beim Laden der Notizen:', error.message);
@@ -2459,6 +2472,7 @@
   function updateAdminUi() {
     adminLoginBtn.classList.toggle('is-admin', isAdmin);
     adminLoginBtn.textContent = isAdmin ? '🔓 Admin' : '🔒 Admin';
+    document.getElementById('admin-panel-btn').style.display = isAdmin ? 'inline-block' : 'none';
     document.getElementById('admin-login-form').style.display = isAdmin ? 'none' : 'block';
     document.getElementById('admin-logged-in').style.display = isAdmin ? 'block' : 'none';
     // Offenes Detail-Panel neu rendern, damit Freigeben-Buttons erscheinen/verschwinden
@@ -2489,6 +2503,7 @@
     }
     document.getElementById('admin-password').value = '';
     closeAdminModal();
+    window.location.href = 'admin.html';
   });
 
   document.getElementById('admin-logout-btn').addEventListener('click', async () => {

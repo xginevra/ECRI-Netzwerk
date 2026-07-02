@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin – Unternehmenskarte</title>
+  <style>
+    :root {
+      --navy: #2b2f36;
+      --accent: #4a4f58;
+      --accent-soft: #eceef0;
+      --surface: #ffffff;
+      --surface-subtle: #f5f5f6;
+      --border: #e2e3e6;
+      --text: #1f2125;
+      --text-muted: #8a8d93;
+      --radius-lg: 12px;
+      --radius-md: 8px;
+      --radius-sm: 6px;
+      --shadow-float: 0 10px 30px rgba(20,21,24,0.16);
+      --shadow-soft: 0 2px 10px rgba(20,21,24,0.08);
+      --green: #1f7a45;
+      --green-bg: #e6f7ec;
+      --amber: #8a6d00;
+      --amber-bg: #fff6db;
+      --red: #a33;
+      --red-bg: #fdeaea;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      background: var(--surface-subtle);
+      min-height: 100vh;
+      color: var(--text);
+    }
+
+    /* ── Header ── */
+    #header {
+      background: var(--navy);
+      color: #fff;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: var(--shadow-soft);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    #header h1 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-right: auto;
+    }
+    #header-user {
+      font-size: 0.82rem;
+      color: #ffffffa0;
+    }
+    #logout-btn {
+      border: 1px solid #ffffff3a;
+      background: transparent;
+      color: #fff;
+      padding: 6px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    #logout-btn:hover { background: #ffffff14; }
+
+    /* ── Login Gate ── */
+    #login-gate {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: calc(100vh - 56px);
+      padding: 24px;
+    }
+    .login-card {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-float);
+      padding: 32px 28px;
+      width: 100%;
+      max-width: 360px;
+    }
+    .login-card h2 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 6px;
+    }
+    .login-card p {
+      font-size: 0.84rem;
+      color: var(--text-muted);
+      margin-bottom: 22px;
+      line-height: 1.5;
+    }
+    .login-card input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      font-family: inherit;
+      margin-bottom: 10px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .login-card input:focus { border-color: var(--accent); }
+    .btn-primary {
+      width: 100%;
+      padding: 10px 0;
+      background: var(--navy);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn-primary:hover { opacity: 0.88; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .status-msg {
+      font-size: 0.78rem;
+      margin-top: 10px;
+      min-height: 1em;
+      color: var(--text-muted);
+    }
+    .status-msg.error { color: var(--red); }
+
+    /* ── Main Content ── */
+    #main {
+      display: none;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 28px 20px 48px;
+    }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0;
+    }
+    .tab-btn {
+      padding: 9px 18px;
+      border: none;
+      background: transparent;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+      transition: color 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active {
+      color: var(--navy);
+      border-bottom-color: var(--navy);
+    }
+    .tab-badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 1px 7px;
+      border-radius: 10px;
+      background: var(--amber-bg);
+      color: var(--amber);
+    }
+    .tab-badge.approved {
+      background: var(--green-bg);
+      color: var(--green);
+    }
+
+    /* ── Tab Panels ── */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── Section Header ── */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .section-header h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--navy);
+    }
+    .section-header p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .refresh-btn {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-muted);
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .refresh-btn:hover { background: var(--surface-subtle); color: var(--text); }
+
+    /* ── Note Cards ── */
+    .notes-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .note-card {
+      background: var(--surface);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      padding: 16px;
+      box-shadow: var(--shadow-soft);
+      transition: box-shadow 0.15s;
+    }
+    .note-card:hover { box-shadow: var(--shadow-float); }
+
+    .note-card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .note-card-company {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--navy);
+    }
+    .note-card-branche {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .note-status-badge {
+      flex-shrink: 0;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 10px;
+      white-space: nowrap;
+    }
+    .note-status-badge.pending {
+      background: var(--amber-bg);
+      color: var(--amber);
+    }
+    .note-status-badge.approved {
+      background: var(--green-bg);
+      color: var(--green);
+    }
+
+    .note-card-text {
+      font-size: 0.88rem;
+      line-height: 1.55;
+      color: var(--text);
+      white-space: pre-wrap;
+      background: var(--surface-subtle);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      margin-bottom: 10px;
+    }
+
+    .note-card-meta {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .note-card-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .btn-approve {
+      padding: 6px 16px;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: var(--green-bg);
+      color: var(--green);
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn-approve:hover { opacity: 0.8; }
+    .btn-revoke {
+      padding: 6px 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-revoke:hover { background: var(--surface-subtle); color: var(--text); }
+    .btn-delete {
+      padding: 6px 14px;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: var(--red-bg);
+      color: var(--red);
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      margin-left: auto;
+    }
+    .btn-delete:hover { opacity: 0.75; }
+
+    /* ── Edit inline ── */
+    .note-edit-wrap textarea {
+      width: 100%;
+      min-height: 72px;
+      padding: 9px 11px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 0.88rem;
+      font-family: inherit;
+      resize: vertical;
+      margin-bottom: 8px;
+    }
+    .note-edit-wrap .edit-btns {
+      display: flex;
+      gap: 8px;
+    }
+    .btn-save {
+      padding: 6px 16px;
+      background: var(--navy);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-cancel {
+      padding: 6px 14px;
+      background: var(--surface-subtle);
+      color: var(--text);
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 0.82rem;
+      cursor: pointer;
+    }
+
+    /* ── Empty / Loading ── */
+    .empty-state {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--text-muted);
+      font-size: 0.88rem;
+    }
+    .empty-state .icon { font-size: 2rem; margin-bottom: 10px; }
+    .loading-state {
+      text-align: center;
+      padding: 32px;
+      color: var(--text-muted);
+      font-size: 0.88rem;
+    }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--navy);
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: var(--radius-md);
+      font-size: 0.84rem;
+      font-weight: 500;
+      box-shadow: var(--shadow-float);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s, transform 0.2s;
+      z-index: 9999;
+      white-space: nowrap;
+    }
+    #toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    #toast.toast-error { background: var(--red); }
+  </style>
+</head>
+<body>
+
+<div id="header">
+  <h1>🏢 Unternehmenskarte — Admin</h1>
+  <span id="header-user"></span>
+  <a href="index.html" id="back-to-map-btn" style="
+  border: 1px solid #ffffff3a;
+  background: transparent;
+  color: #ffffffa0;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  text-decoration: none;
+  transition: background 0.15s;
+  display: inline-block;
+" onmouseover="this.style.background='#ffffff14'" onmouseout="this.style.background='transparent'">← Zur Karte</a>
+<button id="logout-btn" style="display:none">Ausloggen</button>
+</div>
+
+<!-- Login Gate -->
+<div id="login-gate">
+  <div class="login-card">
+    <h2>Admin-Zugang</h2>
+    <p>Diese Seite ist nur für Administratoren zugänglich. Bitte mit deinem Admin-Konto einloggen.</p>
+    <input type="email" id="login-email" placeholder="E-Mail" autocomplete="username">
+    <input type="password" id="login-password" placeholder="Passwort" autocomplete="current-password">
+    <button class="btn-primary" id="login-submit">Einloggen</button>
+    <div class="status-msg" id="login-status"></div>
+  </div>
+</div>
+
+<!-- Main Admin Interface (hidden until logged in as admin) -->
+<div id="main">
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="pending">
+      Ausstehend <span class="tab-badge" id="badge-pending">0</span>
+    </button>
+    <button class="tab-btn" data-tab="approved">
+      Freigegeben <span class="tab-badge approved" id="badge-approved">0</span>
+    </button>
+  </div>
+
+  <!-- Tab: Ausstehend -->
+  <div class="tab-panel active" id="tab-pending">
+    <div class="section-header">
+      <div>
+        <h2>Ausstehende Notizen</h2>
+        <p>Noch nicht freigegebene Notizen, die auf deine Prüfung warten.</p>
+      </div>
+      <button class="refresh-btn" id="refresh-pending">↻ Aktualisieren</button>
+    </div>
+    <div class="notes-grid" id="list-pending">
+      <div class="loading-state">Wird geladen…</div>
+    </div>
+  </div>
+
+  <!-- Tab: Freigegeben -->
+  <div class="tab-panel" id="tab-approved">
+    <div class="section-header">
+      <div>
+        <h2>Freigegebene Notizen</h2>
+        <p>Bereits freigegebene Notizen – öffentlich sichtbar auf der Karte.</p>
+      </div>
+      <button class="refresh-btn" id="refresh-approved">↻ Aktualisieren</button>
+    </div>
+    <div class="notes-grid" id="list-approved">
+      <div class="loading-state">Wird geladen…</div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  // ──────────────────────────────────────────
+  //  👉 SUPABASE-INFOS (gleiche wie Hauptseite)
+  // ──────────────────────────────────────────
+  const SUPABASE_URL = "https://gmvodditiwpjlmjvrvec.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdtdm9kZGl0aXdwamxtanZydmVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1OTMxMzUsImV4cCI6MjA5NzE2OTEzNX0.DeZ-S9xsehxaYSzRnDMqSKAVaNp38xzYJg45fqlG6D8";
+
+  const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // ── State ──
+  let isAdmin = false;
+  let currentTab = 'pending';
+  let allCompanies = {}; // id → {Unternehmen, Branche}
+
+  // ── Toast ──
+  let toastTimer = null;
+  function showToast(msg, isError = false) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.toggle('toast-error', isError);
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+  }
+
+  // ── Auth ──
+  async function checkAuth() {
+    const { data: { session } } = await db.auth.getSession();
+    if (!session) { showLoginGate(); return; }
+
+    const { data, error } = await db.rpc('is_admin');
+    if (error || data !== true) {
+      await db.auth.signOut();
+      showLoginGate('Du hast keine Admin-Rechte.');
+      return;
+    }
+
+    isAdmin = true;
+    showAdminInterface(session.user.email);
+  }
+
+  function showLoginGate(errorMsg = '') {
+    document.getElementById('login-gate').style.display = 'flex';
+    document.getElementById('main').style.display = 'none';
+    document.getElementById('logout-btn').style.display = 'none';
+    document.getElementById('header-user').textContent = '';
+    if (errorMsg) {
+      const s = document.getElementById('login-status');
+      s.textContent = errorMsg;
+      s.classList.add('error');
+    }
+  }
+
+  function showAdminInterface(email) {
+    document.getElementById('login-gate').style.display = 'none';
+    document.getElementById('main').style.display = 'block';
+    document.getElementById('logout-btn').style.display = 'inline-block';
+    document.getElementById('header-user').textContent = email;
+    loadCompanies().then(() => {
+      loadNotes('pending');
+      loadNotes('approved');
+    });
+  }
+
+  // ── Login ──
+  document.getElementById('login-submit').addEventListener('click', async () => {
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    const statusEl = document.getElementById('login-status');
+    const btn = document.getElementById('login-submit');
+
+    if (!email || !password) return;
+    btn.disabled = true;
+    statusEl.classList.remove('error');
+    statusEl.textContent = 'Wird eingeloggt…';
+
+    const { error } = await db.auth.signInWithPassword({ email, password });
+    btn.disabled = false;
+
+    if (error) {
+      statusEl.textContent = 'Login fehlgeschlagen: ' + error.message;
+      statusEl.classList.add('error');
+      return;
+    }
+    document.getElementById('login-password').value = '';
+    await checkAuth();
+  });
+
+  document.getElementById('login-password').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('login-submit').click();
+  });
+
+  // ── Logout ──
+  document.getElementById('logout-btn').addEventListener('click', async () => {
+    await db.auth.signOut();
+    showLoginGate();
+  });
+
+  // ── Unternehmen laden (für Anzeige in Notiz-Karten) ──
+  async function loadCompanies() {
+    const { data, error } = await db.from('Unternehmen_neu').select('id, Unternehmen, Branche');
+    if (error) { console.error('Firmen laden:', error.message); return; }
+    allCompanies = {};
+    (data || []).forEach(c => { allCompanies[c.id] = c; });
+  }
+
+  // ── Notizen laden ──
+  async function loadNotes(type) {
+    const listId = type === 'pending' ? 'list-pending' : 'list-approved';
+    const container = document.getElementById(listId);
+    container.innerHTML = '<div class="loading-state">Wird geladen…</div>';
+
+    const { data, error } = await db
+      .from('notizen')
+      .select('*')
+      .eq('approved', type === 'approved')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      container.innerHTML = `<div class="empty-state"><div class="icon">⚠️</div>Fehler beim Laden: ${error.message}</div>`;
+      return;
+    }
+
+    // Tab-Badges aktualisieren
+    document.getElementById(type === 'pending' ? 'badge-pending' : 'badge-approved').textContent = (data || []).length;
+
+    if (!data || data.length === 0) {
+      container.innerHTML = `<div class="empty-state">
+        <div class="icon">${type === 'pending' ? '✅' : '📭'}</div>
+        ${type === 'pending' ? 'Keine ausstehenden Notizen – alles erledigt!' : 'Noch keine freigegebenen Notizen.'}
+      </div>`;
+      return;
+    }
+
+    container.innerHTML = data.map(n => buildNoteCard(n, type)).join('');
+    wireNoteCardEvents(container, type);
+  }
+
+  // ── Notiz-Karte bauen ──
+  function formatDate(iso) {
+    try {
+      return new Date(iso).toLocaleString('de-DE', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit',
+      });
+    } catch { return ''; }
+  }
+
+  function escHtml(s) {
+    return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function buildNoteCard(n, type) {
+    const company = allCompanies[n.unternehmen_id];
+    const companyName = company ? escHtml(company['Unternehmen']) : `Unternehmen #${n.unternehmen_id}`;
+    const branche = company?.['Branche'] ? `<div class="note-card-branche">${escHtml(company['Branche'])}</div>` : '';
+    const statusLabel = type === 'pending' ? 'Ausstehend' : 'Freigegeben';
+    const statusClass = type === 'pending' ? 'pending' : 'approved';
+
+    const approveBtn = type === 'pending'
+      ? `<button class="btn-approve" data-id="${n.id}" data-action="approve">✓ Freigeben</button>`
+      : `<button class="btn-revoke" data-id="${n.id}" data-action="revoke">Freigabe zurückziehen</button>`;
+
+    return `
+      <div class="note-card" data-note-id="${n.id}">
+        <div class="note-card-header">
+          <div>
+            <div class="note-card-company">${companyName}</div>
+            ${branche}
+          </div>
+          <span class="note-status-badge ${statusClass}">${statusLabel}</span>
+        </div>
+        <div class="note-card-text" data-note-text-display>${escHtml(n.text)}</div>
+        <div class="note-card-meta">
+          Erstellt: ${formatDate(n.created_at)}
+          ${n.updated_at && n.updated_at !== n.created_at ? ` · Bearbeitet: ${formatDate(n.updated_at)}` : ''}
+        </div>
+        <div class="note-card-actions">
+          ${approveBtn}
+          <button class="btn-delete" data-id="${n.id}" data-action="delete">Löschen</button>
+        </div>
+      </div>
+    `;
+  }
+
+  // ── Event-Listener auf Notiz-Karten ──
+  function wireNoteCardEvents(container, type) {
+    container.querySelectorAll('[data-action]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        const action = btn.dataset.action;
+
+        if (action === 'approve') {
+          await approveNote(id);
+        } else if (action === 'revoke') {
+          await revokeNote(id);
+        } else if (action === 'delete') {
+          await deleteNote(id);
+        }
+      });
+    });
+  }
+
+  // ── Freigeben ──
+  async function approveNote(id) {
+    const { error } = await db.from('notizen').update({ approved: true }).eq('id', id);
+    if (error) { showToast('Fehler: ' + error.message, true); return; }
+    showToast('Notiz freigegeben ✓');
+    await loadNotes('pending');
+    await loadNotes('approved');
+  }
+
+  // ── Freigabe zurückziehen ──
+  async function revokeNote(id) {
+    const { error } = await db.from('notizen').update({ approved: false }).eq('id', id);
+    if (error) { showToast('Fehler: ' + error.message, true); return; }
+    showToast('Freigabe zurückgezogen');
+    await loadNotes('pending');
+    await loadNotes('approved');
+  }
+
+  // ── Löschen ──
+  async function deleteNote(id) {
+    if (!confirm('Diese Notiz wirklich endgültig löschen?')) return;
+    const { error } = await db.from('notizen').delete().eq('id', id);
+    if (error) { showToast('Fehler: ' + error.message, true); return; }
+    showToast('Notiz gelöscht');
+    await loadNotes('pending');
+    await loadNotes('approved');
+  }
+
+  // ── Tabs ──
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentTab = btn.dataset.tab;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === `tab-${currentTab}`));
+    });
+  });
+
+  // ── Refresh-Buttons ──
+  document.getElementById('refresh-pending').addEventListener('click', () => loadNotes('pending'));
+  document.getElementById('refresh-approved').addEventListener('click', () => loadNotes('approved'));
+
+  // ── Auth State Listener ──
+  db.auth.onAuthStateChange((_event, session) => {
+    if (!session) showLoginGate();
+  });
+
+  // ── Init ──
+  checkAuth();
+</script>
+</body>
+</html>
