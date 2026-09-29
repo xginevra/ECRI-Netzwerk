@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="origin">
   <title>Unternehmenskarte</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
   <style>
@@ -465,7 +466,7 @@
       margin-top: 1px;
     }
 
-    /* ── Hervorgehobenes Logo: "Potentiell interessant" (Kontakt/eigene Suche = X) ──
+    /* ── Hervorgehobenes Logo: "Potentiell interessant" (Kontakt/eigene Suche = X)
        Passend zur Hervorhebung auf der Karte: etwas größer, goldfarbener Rand. ── */
     .sidebar-item-logo.logo-interesting {
       width: 36px;
@@ -573,7 +574,7 @@
       object-fit: contain;
     }
 
-    /* ── Hervorgehobener Marker: "Potentiell interessant" (Kontakt/eigene Suche = X) ──
+    /* ── Hervorgehobener Marker: "Potentiell interessant" (Kontakt/eigene Suche = X)
        Etwas größer und mit farbigem Rand, damit dieses subtile Signal auch
        auf der Karte selbst erkennbar ist, ohne aufdringlich zu wirken. ── */
     .company-logo-marker.marker-interesting {
@@ -1358,7 +1359,10 @@
   }
 
   const map = L.map('map').setView([48.56, 13.43], 9);
+
   // ── Kartenstile zur Auswahl ──
+  // CARTO-Layer (verlangen inzwischen einen API-Key) vorerst auskommentiert:
+  /*
   const lightLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
     subdomains: 'abcd',
@@ -1370,18 +1374,24 @@
     subdomains: 'abcd',
     maxZoom: 19,
   });
+  */
 
-  const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  const osmLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     maxZoom: 19,
   });
 
-  voyagerLayer.addTo(map);
+  // Optionaler Ersatz, falls OSM auf GitHub Pages doch blockiert wird:
+  const esriStreets = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Tiles &copy; Esri',
+    maxZoom: 19,
+  });
+
+  osmLayer.addTo(map);   // vorher: voyagerLayer.addTo(map);
 
   const layersControl = L.control.layers({
-    'Voyager (bunt)': voyagerLayer,
-    'Positron (hell)': lightLayer,
     'Standard OSM': osmLayer,
+    'Esri Straßen': esriStreets,
   }).addTo(map);
 
   // Eindeutige Klasse für die Leaflet-Layer-Schaltfläche, damit wir sie
