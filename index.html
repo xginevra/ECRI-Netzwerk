@@ -1387,11 +1387,11 @@
     maxZoom: 19,
   });
 
-  osmLayer.addTo(map);   // vorher: voyagerLayer.addTo(map);
+  esriStreets.addTo(map);   // Standard-Kartenstil (vorher: osmLayer / voyagerLayer)
 
   const layersControl = L.control.layers({
-    'Standard OSM': osmLayer,
     'Esri Straßen': esriStreets,
+    'Standard OSM': osmLayer,
   }).addTo(map);
 
   // Eindeutige Klasse für die Leaflet-Layer-Schaltfläche, damit wir sie
