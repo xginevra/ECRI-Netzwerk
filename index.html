@@ -1495,11 +1495,13 @@
       .filter(Boolean);
   }
 
-  // ── Hilfsfunktion: "/"-getrennte Branchen in eine saubere Liste splitten ──
+  // ── Hilfsfunktion: ";"-getrennte Branchen in eine saubere Liste splitten ──
+  // Ein "/" innerhalb einer Branche (z.B. "IT / Dienstleistung") bleibt bewusst
+  // erhalten und ergibt EINEN Filter. Mehrere Branchen pro Firma mit ";" trennen.
   function splitBranche(value) {
     if (!value) return [];
     return String(value)
-      .split('/')
+      .split(';')
       .map(v => v.trim())
       .filter(Boolean);
   }
@@ -1637,7 +1639,7 @@
   // ──────────────────────────────────────────
   const EDITABLE_TEXT_FIELDS = [
     { key: 'Unternehmen', label: 'Unternehmen' },
-    { key: 'Branche', label: 'Branche (mit "/" trennen)' },
+    { key: 'Branche', label: 'Branche (mit ";" trennen)' },
     { key: 'Adresse', label: 'Adresse' },
     { key: 'Standorte', label: 'Standorte (mit ";" trennen)' },
     { key: 'Telefon', label: 'Telefon' },
