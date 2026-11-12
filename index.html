@@ -1668,7 +1668,7 @@
       </label>
     `).join('');
 
-    const interestingChecked = isMarked(c['Kontakt / eigene Suche']) ? 'checked' : '';
+    const interestingChecked = isMarked(c['Kaltakquise']) ? 'checked' : '';
 
     return `
       <div class="panel-name">Eintrag bearbeiten</div>
@@ -1680,7 +1680,7 @@
       <div class="panel-section">
         <label class="edit-checkbox-row">
           <input type="checkbox" id="edit-interesting" ${interestingChecked}>
-          <span>Kaltakquise (Kontakt / eigene Suche)</span>
+          <span>Kaltakquise (Kaltakquise)</span>
         </label>
       </div>
       <div class="edit-actions">
@@ -1720,7 +1720,7 @@
     document.querySelectorAll('[data-edit-badge-key]').forEach(cb => {
       update[cb.dataset.editBadgeKey] = cb.checked ? 'X' : '';
     });
-    update['Kontakt / eigene Suche'] = document.getElementById('edit-interesting').checked ? 'X' : '';
+    update['Kaltakquise'] = document.getElementById('edit-interesting').checked ? 'X' : '';
 
     const { error } = await db.from('Unternehmen_neu').update(update).eq('id', c.id);
     if (error) {
@@ -2209,7 +2209,7 @@
 
       // Marker sofort mit Buchstaben-Platzhalter anzeigen (kein Warten auf Netzwerk),
       // danach im Hintergrund auf das beste verfügbare Favicon umschalten.
-      const isInteresting = isMarked(c['Kontakt / eigene Suche']);
+      const isInteresting = isMarked(c['Kaltakquise']);
       const hasAnyBadge = BADGE_FIELDS.some(f => isMarked(c[f.key]));
       const markerSize = hasAnyBadge ? 38 : 30;
       const markerClass = 'company-logo-marker' + (isInteresting ? ' marker-interesting' : '');
@@ -2270,7 +2270,7 @@
       const name = c['Unternehmen'] ?? '';
       const domain = extractDomain(c['Webseite']);
       const candidates = faviconCandidates(domain);
-      const logoClass = 'sidebar-item-logo' + (isMarked(c['Kontakt / eigene Suche']) ? ' logo-interesting' : '');
+      const logoClass = 'sidebar-item-logo' + (isMarked(c['Kaltakquise']) ? ' logo-interesting' : '');
 
       const logoHtml = candidates.length > 0
         ? `<img class="${logoClass}" src="${candidates[0]}" data-fallback-index="0" data-company="${name.replace(/"/g, '&quot;')}"
